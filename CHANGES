@@ -3,3 +3,5 @@
 
 * Initial starting points, config parser and option parsers
 * Creation of directories for maildir usage
+* Initial creation of file per message (no collision detection or use of the
+  state directory yet)
