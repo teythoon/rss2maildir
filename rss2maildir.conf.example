@@ -1,0 +1,8 @@
+[general]
+maildir_root = RSSMaildir
+
+[http://www.sommitrealweird.co.uk/blog/?flav=atom]
+name = Brett Parker
+email = iDunno@sommitrealweird.co.uk
+maildir = sommitrealweird
+
