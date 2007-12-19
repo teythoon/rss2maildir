@@ -1,4 +1,5 @@
 2007-12-19
 ----------
 
-Initial starting points, config parser and option parsers
+* Initial starting points, config parser and option parsers
+* Creation of directories for maildir usage
