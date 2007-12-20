@@ -11,6 +11,8 @@ import feedparser
 import email
 
 import datetime
+import random
+import string
 
 from optparse import OptionParser
 from ConfigParser import SafeConfigParser
@@ -30,13 +32,15 @@ def parse_and_deliver(maildir, url, statedir):
         msg.set_charset("utf8")
         msg.set_default_type("text/plain")
 
-        # open a temporary file in the maildir
-        fn = os.tempnam(os.path.join(maildir, "tmp"))
+        # start by working out the filename we should be writting to, we do
+        # this following the normal maildir style rules
+        fname = str(os.getpid()) + "".join([random.choice(string.ascii_letters + string.digits) for a in range(0,10)]) + datetime.datetime.now().strftime('%s')
+        fn = os.path.join(maildir, "tmp", fname)
         fh = open(fn, "w")
         fh.write(msg.as_string())
         fh.close()
         # now move it in to the new directory
-        newfn = os.tempnam(os.path.join(maildir, "new"))
+        newfn = os.path.join(maildir, "new", fname)
         os.link(fn, newfn)
         os.unlink(fn)
 
