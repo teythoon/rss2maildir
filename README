@@ -5,8 +5,8 @@ Introduction
 ------------
 
 rss2maildir takes rss feeds and creates a maildir of messages for each of the
-feeds, new items become "new", updated entries also get marked as new when they
-are updated. Each feed becomes it's own maildir which can be named as you like.
+feeds, new items become "new", updated entries get redelivered as new messages.
+Each feed becomes it's own maildir which can be named as you like.
 
 Usage
 -----
