@@ -70,6 +70,7 @@ class HTML2Text(HTMLParser):
         self.currentparagraph = ""
         self.headingtext = ""
         self.blockquote = ""
+        self.inpre = False
         HTMLParser.__init__(self)
 
     def handle_starttag(self, tag, attrs):
@@ -86,10 +87,10 @@ class HTML2Text(HTMLParser):
             self.inlink = True
         elif tag.lower() == "br":
             if self.inparagraph:
-                self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70))
+                self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70)) + "\n"
                 self.currentparagraph = ""
             elif self.inblockquote:
-                self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)])
+                self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)]) + "\n"
                 self.blockquote = ""
             else:
                 self.text = self.text + "\n"
@@ -99,16 +100,23 @@ class HTML2Text(HTMLParser):
         elif tag.lower() == "p":
             if self.text != "":
                 self.text = self.text + "\n\n"
+            if self.inparagraph:
+                self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70))
             self.currentparagraph = ""
             self.inparagraph = True
+        elif tag.lower() == "pre":
+            self.text = self.text + "\n"
+            self.inpre = True
+            self.inparagraph = False
+            self.inblockquote = False
 
     def handle_startendtag(self, tag, attrs):
         if tag.lower() == "br":
             if self.inparagraph:
-                self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70))
+                self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70)) + "\n"
                 self.currentparagraph = ""
             elif self.inblockquote:
-                self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)])
+                self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)]) + "\n"
                 self.blockquote = ""
             else:
                 self.text = self.text + "\n"
@@ -116,23 +124,25 @@ class HTML2Text(HTMLParser):
     def handle_endtag(self, tag):
         if tag.lower() == "h1":
             self.inheadingone = False
-            self.text = self.text + self.headingtext + "\n" + "=" * len(self.headingtext)
+            self.text = self.text + "\n\n" + self.headingtext + "\n" + "=" * len(self.headingtext.strip())
             self.headingtext = ""
         elif tag.lower() == "h2":
             self.inheadingtwo = False
-            self.text = self.text + self.headingtext + "\n" + "-" * len(self.headingtext)
+            self.text = self.text + "\n\n" + self.headingtext + "\n" + "-" * len(self.headingtext.strip())
             self.headingtext = ""
         elif tag.lower() in ["h3", "h4", "h5", "h6"]:
             self.inotherheading = False
-            self.text = self.text + self.headingtext + "\n" + "~" * len(self.headingtext)
+            self.text = self.text + "\n\n" + self.headingtext + "\n" + "~" * len(self.headingtext.strip())
             self.headingtext = ""
         elif tag.lower() == "p":
             self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70))
             self.inparagraph = False
         elif tag.lower() == "blockquote":
-            self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)])
+            self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)]) + "\n"
             self.inblockquote = False
             self.blockquote = ""
+        elif tag.lower() == "pre":
+            self.inpre = False
 
     def handle_data(self, data):
         if self.inheadingone or self.inheadingtwo or self.inotherheading:
@@ -141,6 +151,8 @@ class HTML2Text(HTMLParser):
             self.blockquote = self.blockquote + data.strip() + " "
         elif self.inparagraph:
             self.currentparagraph = self.currentparagraph + data.strip() + " "
+        elif self.inpre:
+            self.text = self.text + data
         else:
             self.text = self.text + data.strip() + " "
 
