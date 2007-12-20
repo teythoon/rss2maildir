@@ -6,3 +6,12 @@ name = Brett Parker
 email = iDunno@sommitrealweird.co.uk
 maildir = sommitrealweird
 
+[http://planet.alug.org.uk/rss20.xml]
+name = Planet Alug
+email = main@lists.alug.org.uk
+maildir = alug
+
+[http://planet.debian.org/rss10.xml]
+name = Planet Debian
+email = debian-users@lists.debian.org
+maildir = debian
