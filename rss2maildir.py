@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# coding=utf8
 
 import mailbox
 import sys
@@ -26,6 +27,76 @@ import md5
 import cgi
 import dbm
 
+from HTMLParser import HTMLParser
+
+entities = {
+    "amp": "&",
+    "lt": "<",
+    "gt": ">",
+    "pound": "£",
+    "copy": "©",
+    "apos": "'",
+    "quote": "\"",
+    }
+
+class HTML2Text(HTMLParser):
+    
+    def __init__(self):
+        self.inheadingone = False
+        self.inheadingtwo = False
+        self.inotherheading = False
+        self.inlink = False
+        self.text = ""
+        self.headingtext = ""
+        HTMLParser.__init__(self)
+
+    def handle_starttag(self, tag, attrs):
+        if tag.lower() == "h1":
+            self.inheadingone = True
+        elif tag.lower() == "h2":
+            self.inheadingtwo = True
+        elif tag.lower() in ["h3", "h4", "h5", "h6"]:
+            self.inotherheading = True
+        elif tag.lower() == "a":
+            self.inlink = True
+        elif tag.lower() == "br":
+            self.text = self.text + "\n"
+        elif tag.lower() == "p":
+            if self.text != "":
+                self.text = self.text + "\n\n"
+
+    def handle_startendtag(self, tag, attrs):
+        if tag.lower() == "br":
+            self.text = self.text + "\n"
+
+    def handle_endtag(self, tag):
+        if tag.lower() == "h1":
+            self.inheadingone = False
+            self.text = self.text + self.headingtext + "\n" + "=" * len(self.headingtext)
+            self.headingtext = ""
+        elif tag.lower() == "h2":
+            self.inheadingtwo = False
+            self.text = self.text + self.headingtext + "\n" + "-" * len(self.headingtext)
+            self.headingtext = ""
+        elif tag.lower() in ["h3", "h4", "h5", "h6"]:
+            self.inotherheading = False
+            self.text = self.text + self.headingtext + "\n" + "~" * len(self.headingtext)
+            self.headingtext = ""
+
+    def handle_data(self, data):
+        if not self.inheadingone and not self.inheadingtwo and not self.inotherheading:
+            self.text = self.text + data.strip() + " "
+        else:
+            self.headingtext = self.headingtext + data.strip() + " "
+
+    def handle_entityref(self, name):
+        if entities.has_key(name.lower()):
+            self.text = self.text + entities[name.lower()]
+        else:
+            self.text = self.text + "&" + name + ";"
+
+    def gettext(self):
+        return self.text
 
 def parse_and_deliver(maildir, url, statedir):
     md = mailbox.Maildir(maildir)
@@ -66,8 +137,10 @@ def parse_and_deliver(maildir, url, statedir):
         msg.set_default_type("text/plain")
 
         htmlpart = MIMEText(content.encode("utf8"), "html", "utf8")
-        textpart = MIMEText(content.encode("utf8"), "plain", "utf8")
-
+        textparser = HTML2Text()
+        textparser.feed(content.encode("utf8"))
+        textcontent = textparser.gettext()
+        textpart = MIMEText(textcontent, "plain", "utf8")
         msg.attach(textpart)
         msg.attach(htmlpart)
 
