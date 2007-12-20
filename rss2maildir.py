@@ -64,10 +64,12 @@ class HTML2Text(HTMLParser):
         self.inheadingtwo = False
         self.inotherheading = False
         self.inparagraph = True
+        self.inblockquote = False
         self.inlink = False
         self.text = ""
         self.currentparagraph = ""
         self.headingtext = ""
+        self.blockquote = ""
         HTMLParser.__init__(self)
 
     def handle_starttag(self, tag, attrs):
@@ -83,16 +85,33 @@ class HTML2Text(HTMLParser):
         elif tag.lower() == "a":
             self.inlink = True
         elif tag.lower() == "br":
+            if self.inparagraph:
+                self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70))
+                self.currentparagraph = ""
+            elif self.inblockquote:
+                self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)])
+                self.blockquote = ""
+            else:
+                self.text = self.text + "\n"
+        elif tag.lower() == "blockquote":
+            self.inblockquote = True
             self.text = self.text + "\n"
         elif tag.lower() == "p":
             if self.text != "":
                 self.text = self.text + "\n\n"
-                self.currentparagraph = ""
-                self.inparagraph = True
+            self.currentparagraph = ""
+            self.inparagraph = True
 
     def handle_startendtag(self, tag, attrs):
         if tag.lower() == "br":
-            self.text = self.text + "\n"
+            if self.inparagraph:
+                self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70))
+                self.currentparagraph = ""
+            elif self.inblockquote:
+                self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)])
+                self.blockquote = ""
+            else:
+                self.text = self.text + "\n"
 
     def handle_endtag(self, tag):
         if tag.lower() == "h1":
@@ -110,14 +129,20 @@ class HTML2Text(HTMLParser):
         elif tag.lower() == "p":
             self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70))
             self.inparagraph = False
+        elif tag.lower() == "blockquote":
+            self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)])
+            self.inblockquote = False
+            self.blockquote = ""
 
     def handle_data(self, data):
-        if not self.inheadingone and not self.inheadingtwo and not self.inotherheading and not self.inparagraph:
-            self.text = self.text + data.strip() + " "
+        if self.inheadingone or self.inheadingtwo or self.inotherheading:
+            self.headingtext = self.headingtext + data.strip() + " "
+        elif self.inblockquote:
+            self.blockquote = self.blockquote + data.strip() + " "
         elif self.inparagraph:
             self.currentparagraph = self.currentparagraph + data.strip() + " "
         else:
-            self.headingtext = self.headingtext + data.strip() + " "
+            self.text = self.text + data.strip() + " "
 
     def handle_entityref(self, name):
         if entities.has_key(name.lower()):
