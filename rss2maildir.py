@@ -146,8 +146,8 @@ def parse_and_deliver(maildir, url, statedir):
 
         md5sum = md5.md5(content.encode("utf8")).hexdigest()
 
-        if db.has_key(item["link"]):
-            data = db[item["link"]]
+        if db.has_key(url + "|" + item["link"]):
+            data = db[url + "|" + item["link"]]
             data = cgi.parse_qs(data)
             if data["contentmd5"][0] == md5sum:
                 continue
@@ -191,7 +191,7 @@ def parse_and_deliver(maildir, url, statedir):
 
         # now add to the database about the item
         data = urllib.urlencode((("message-id", messageid), ("created", createddate), ("contentmd5", md5sum)))
-        db[item["link"]] = data
+        db[url + "|" + item["link"]] = data
 
     db.close()
 
