@@ -14,8 +14,12 @@ import datetime
 import random
 import string
 
+import socket
+
 from optparse import OptionParser
 from ConfigParser import SafeConfigParser
+
+from base64 import b64encode
 
 
 def parse_and_deliver(maildir, url, statedir):
@@ -24,17 +28,21 @@ def parse_and_deliver(maildir, url, statedir):
     for item in fp["items"]:
         # things that we need in the message
         msg = email.message_from_string("")
-        msg.add_header("Subject", item["title"])
-        msg.set_unixfrom("Brett Parker <iDunno@sommitrealweird.co.uk>")
+        msg.set_unixfrom("\"%s\" <rss2maildir@localhost>" %(url))
+        msg.add_header("From", "\"%s\" <rss2maildir@localhost>" %(item["author"]))
+        msg.add_header("To", "\"%s\" <rss2maildir@localhost>" %(url))
         msg.add_header("Date", datetime.datetime(*item["created_parsed"][0:6]).strftime("%a, %e %b %Y %T -0000"))
-        msg.add_header("To", url)
-        msg.set_payload(item["content"][0]["value"])
+        msg.add_header("Subject", item["title"])
         msg.set_charset("utf8")
-        msg.set_default_type("text/plain")
+        msg.set_default_type(item["content"][0]["type"])
+        msg.set_type(item["content"][0]["type"])
+        msg.set_payload(b64encode(item["content"][0]["value"]))
+
+        msg.add_header("Message-ID", "<" + datetime.datetime.now().strftime("%Y%m%d%H%M") + "." + "".join([random.choice(string.ascii_letters + string.digits) for a in range(0,6)]) + "@" + socket.gethostname() + ">")
 
         # start by working out the filename we should be writting to, we do
         # this following the normal maildir style rules
-        fname = str(os.getpid()) + "".join([random.choice(string.ascii_letters + string.digits) for a in range(0,10)]) + datetime.datetime.now().strftime('%s')
+        fname = str(os.getpid()) + "." + socket.gethostname() + "." + "".join([random.choice(string.ascii_letters + string.digits) for a in range(0,10)]) + "." + datetime.datetime.now().strftime('%s')
         fn = os.path.join(maildir, "tmp", fname)
         fh = open(fn, "w")
         fh.write(msg.as_string())
