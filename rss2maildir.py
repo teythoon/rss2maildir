@@ -8,7 +8,8 @@ import urllib
 
 import feedparser
 
-import email
+from email.MIMEMultipart import MIMEMultipart
+from email.MIMEText import MIMEText
 
 import datetime
 import random
@@ -20,25 +21,55 @@ from optparse import OptionParser
 from ConfigParser import SafeConfigParser
 
 from base64 import b64encode
+import md5
+
+import cgi
+import dbm
 
 
 def parse_and_deliver(maildir, url, statedir):
     md = mailbox.Maildir(maildir)
     fp = feedparser.parse(url)
+    db = dbm.open(os.path.join(statedir, "seen"), "c")
     for item in fp["items"]:
-        # things that we need in the message
-        msg = email.message_from_string("")
-        msg.set_unixfrom("\"%s\" <rss2maildir@localhost>" %(url))
-        msg.add_header("From", "\"%s\" <rss2maildir@localhost>" %(item["author"]))
-        msg.add_header("To", "\"%s\" <rss2maildir@localhost>" %(url))
-        msg.add_header("Date", datetime.datetime(*item["created_parsed"][0:6]).strftime("%a, %e %b %Y %T -0000"))
-        msg.add_header("Subject", item["title"])
-        msg.set_charset("utf8")
-        msg.set_default_type(item["content"][0]["type"])
-        msg.set_type(item["content"][0]["type"])
-        msg.set_payload(b64encode(item["content"][0]["value"]))
+        # have we seen it before?
+        # need to work out what the content is first...
 
-        msg.add_header("Message-ID", "<" + datetime.datetime.now().strftime("%Y%m%d%H%M") + "." + "".join([random.choice(string.ascii_letters + string.digits) for a in range(0,6)]) + "@" + socket.gethostname() + ">")
+        if item.has_key("content"):
+            content = item["content"][0]["value"]
+        else:
+            content = item["summary"]
+
+        md5sum = md5.md5(content.encode("utf8")).hexdigest()
+
+        if db.has_key(item["link"]):
+            data = db[item["link"]]
+            data = cgi.parse_qs(data)
+            if data["contentmd5"][0] == md5sum:
+                continue
+
+        try:
+            author = item["author"]
+        except:
+            author = url
+
+        # create a basic email message
+        msg = MIMEMultipart("alternative")
+        messageid = "<" + datetime.datetime.now().strftime("%Y%m%d%H%M") + "." + "".join([random.choice(string.ascii_letters + string.digits) for a in range(0,6)]) + "@" + socket.gethostname() + ">"
+        msg.add_header("Message-ID", messageid)
+        msg.set_unixfrom("\"%s\" <rss2maildir@localhost>" %(url))
+        msg.add_header("From", "\"%s\" <rss2maildir@localhost>" %(author))
+        msg.add_header("To", "\"%s\" <rss2maildir@localhost>" %(url))
+        createddate = datetime.datetime(*item["updated_parsed"][0:6]).strftime("%a, %e %b %Y %T -0000")
+        msg.add_header("Date", createddate)
+        msg.add_header("Subject", item["title"])
+        msg.set_default_type("text/plain")
+
+        htmlpart = MIMEText(content.encode("utf8"), "html", "utf8")
+        textpart = MIMEText(content.encode("utf8"), "plain", "utf8")
+
+        msg.attach(textpart)
+        msg.attach(htmlpart)
 
         # start by working out the filename we should be writting to, we do
         # this following the normal maildir style rules
@@ -51,6 +82,12 @@ def parse_and_deliver(maildir, url, statedir):
         newfn = os.path.join(maildir, "new", fname)
         os.link(fn, newfn)
         os.unlink(fn)
+
+        # now add to the database about the item
+        data = urllib.urlencode((("message-id", messageid), ("created", createddate), ("contentmd5", md5sum)))
+        db[item["link"]] = data
+
+    db.close()
 
 # first off, parse the command line arguments
 
@@ -129,6 +166,18 @@ elif scp.has_option("general", "state_dir"):
             state_dir = new_state_dir
         except:
             sys.stderr.write("Couldn't create state directory %s\n" %(new_state_dir))
+            sys.exit(1)
+else:
+    try:
+        mode = os.stat(state_dir)[stat.ST_MODE]
+        if not stat.S_ISDIR(mode):
+            sys.stderr.write("State directory %s is not a directory\n" %(state_dir))
+            sys.exit(1)
+    except:
+        try:
+            os.mkdir(state_dir)
+        except:
+            sys.stderr.write("State directory %s could not be created\n" %(state_dir))
             sys.exit(1)
 
 if scp.has_option("general", "maildir_root"):
