@@ -31,6 +31,7 @@ from email.MIMEText import MIMEText
 import datetime
 import random
 import string
+import textwrap
 
 import socket
 
@@ -53,6 +54,7 @@ entities = {
     "copy": "©",
     "apos": "'",
     "quote": "\"",
+    "nbsp": " ",
     }
 
 class HTML2Text(HTMLParser):
@@ -61,18 +63,23 @@ class HTML2Text(HTMLParser):
         self.inheadingone = False
         self.inheadingtwo = False
         self.inotherheading = False
+        self.inparagraph = True
         self.inlink = False
         self.text = ""
+        self.currentparagraph = ""
         self.headingtext = ""
         HTMLParser.__init__(self)
 
     def handle_starttag(self, tag, attrs):
         if tag.lower() == "h1":
             self.inheadingone = True
+            self.inparagraph = False
         elif tag.lower() == "h2":
             self.inheadingtwo = True
+            self.inparagraph = False
         elif tag.lower() in ["h3", "h4", "h5", "h6"]:
             self.inotherheading = True
+            self.inparagraph = False
         elif tag.lower() == "a":
             self.inlink = True
         elif tag.lower() == "br":
@@ -80,6 +87,8 @@ class HTML2Text(HTMLParser):
         elif tag.lower() == "p":
             if self.text != "":
                 self.text = self.text + "\n\n"
+                self.currentparagraph = ""
+                self.inparagraph = True
 
     def handle_startendtag(self, tag, attrs):
         if tag.lower() == "br":
@@ -98,10 +107,15 @@ class HTML2Text(HTMLParser):
             self.inotherheading = False
             self.text = self.text + self.headingtext + "\n" + "~" * len(self.headingtext)
             self.headingtext = ""
+        elif tag.lower() == "p":
+            self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70))
+            self.inparagraph = False
 
     def handle_data(self, data):
-        if not self.inheadingone and not self.inheadingtwo and not self.inotherheading:
+        if not self.inheadingone and not self.inheadingtwo and not self.inotherheading and not self.inparagraph:
             self.text = self.text + data.strip() + " "
+        elif self.inparagraph:
+            self.currentparagraph = self.currentparagraph + data.strip() + " "
         else:
             self.headingtext = self.headingtext + data.strip() + " "
 
@@ -112,7 +126,10 @@ class HTML2Text(HTMLParser):
             self.text = self.text + "&" + name + ";"
 
     def gettext(self):
-        return self.text
+        data = self.text
+        if self.inparagraph:
+            data = data + "\n".join(textwrap.wrap(self.currentparagraph, 70))
+        return data
 
 def parse_and_deliver(maildir, url, statedir):
     md = mailbox.Maildir(maildir)
