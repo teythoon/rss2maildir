@@ -278,9 +278,13 @@ def parse_and_deliver(maildir, url, statedir):
 
         md5sum = md5.md5(content.encode("utf-8")).hexdigest()
 
+        prevmessageid = None
+
         if db.has_key(url + "|" + item["link"]):
             data = db[url + "|" + item["link"]]
             data = cgi.parse_qs(data)
+            if data.has_key("message-id"):
+                prevmessageid = data["message-id"][0]
             if data["contentmd5"][0] == md5sum:
                 continue
 
@@ -303,6 +307,8 @@ def parse_and_deliver(maildir, url, statedir):
         msg.set_unixfrom("\"%s\" <rss2maildir@localhost>" %(url))
         msg.add_header("From", "\"%s\" <rss2maildir@localhost>" %(author))
         msg.add_header("To", "\"%s\" <rss2maildir@localhost>" %(url))
+        if prevmessageid:
+            msg.add_header("References", prevmessageid)
         createddate = datetime.datetime(*item["updated_parsed"][0:6]) \
             .strftime("%a, %e %b %Y %T -0000")
         msg.add_header("Date", createddate)
@@ -337,6 +343,8 @@ def parse_and_deliver(maildir, url, statedir):
         os.unlink(fn)
 
         # now add to the database about the item
+        if prevmessageid:
+            messageid = prevmessageid + " " + messageid
         data = urllib.urlencode((
             ("message-id", messageid), \
             ("created", createddate), \
