@@ -199,8 +199,10 @@ class HTML2Text(HTMLParser):
             self.text = self.text \
                 + u'\n> ' \
                 + u'\n> '.join( \
-                    [a.strip() for a in textwrap.wrap(self.blockquote, 68)] \
-                    ).encode("utf-8") \
+                    [a.strip() \
+                        for a in textwrap.wrap( \
+                            self.blockquote, 68)] \
+                    ) \
                 + u'\n'
             self.inblockquote = False
             self.blockquote = u''
@@ -248,11 +250,11 @@ class HTML2Text(HTMLParser):
             entity = "&" + name + ";"
 
         if self.inparagraph:
-            self.currentparagraph = self.currentparagraph + entity
+            self.currentparagraph = self.currentparagraph + unicode(entity, "utf-8")
         elif self.inblockquote:
-            self.blockquote = self.blockquote + entity
+            self.blockquote = self.blockquote + unicode(entity, "utf-8")
         else:
-            self.text = self.text + entity
+            self.text = self.text + unicode(entity, "utf-8")
 
     def gettext(self):
         data = self.text
