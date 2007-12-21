@@ -88,23 +88,7 @@ class HTML2Text(HTMLParser):
         elif tag.lower() == "a":
             self.inlink = True
         elif tag.lower() == "br":
-            if self.inparagraph:
-                self.text = self.text \
-                    + u'\n'.join( \
-                        textwrap.wrap(self.currentparagraph, 70)) \
-                    + u'\n'
-                self.currentparagraph = ""
-            elif self.inblockquote:
-                self.text = self.text \
-                    + u'\n> ' \
-                    + u'\n> '.join( \
-                        [a.strip() \
-                            for a in textwrap.wrap(self.blockquote, 68) \
-                        ]) \
-                    + u'\n'
-                self.blockquote = u''
-            else:
-                self.text = self.text + u'\n'
+            self.handle_br()
         elif tag.lower() == "blockquote":
             self.inblockquote = True
             self.text = self.text + u'\n'
@@ -139,6 +123,9 @@ class HTML2Text(HTMLParser):
 
     def handle_startendtag(self, tag, attrs):
         if tag.lower() == "br":
+            self.handle_br()
+
+    def handle_br(self):
             if self.inparagraph:
                 self.text = self.text \
                 + u'\n'.join( \
