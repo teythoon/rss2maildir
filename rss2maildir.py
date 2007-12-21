@@ -299,7 +299,12 @@ def parse_and_deliver(maildir, url, statedir):
     else:
         conn = httplib.HTTPConnection("%s:%s" %(host, port))
         conn.request("GET", path)
-        response = conn.getresponse()
+        response = None
+        try:
+            response = conn.getresponse()
+        except:
+            print "Failed to fetch feed: %s" %(url)
+            return
         headers = response.getheaders()
         feedhandle = response
 
@@ -347,8 +352,13 @@ def parse_and_deliver(maildir, url, statedir):
         msg.add_header("To", "\"%s\" <rss2maildir@localhost>" %(url))
         if prevmessageid:
             msg.add_header("References", prevmessageid)
-        createddate = datetime.datetime(*item["updated_parsed"][0:6]) \
+        createddate = datetime.datetime.now() \
             .strftime("%a, %e %b %Y %T -0000")
+        try:
+            createddate = datetime.datetime(*item["updated_parsed"][0:6]) \
+                .strftime("%a, %e %b %Y %T -0000")
+        except:
+            pass
         msg.add_header("Date", createddate)
         msg.add_header("Subject", item["title"])
         msg.set_default_type("text/plain")
