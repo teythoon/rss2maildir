@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# coding=utf8
+# coding=utf-8
 
 # rss2maildir.py - RSS feeds to Maildir 1 email per item
 # Copyright (C) 2007  Brett Parker <iDunno@sommitrealweird.co.uk>
@@ -66,10 +66,10 @@ class HTML2Text(HTMLParser):
         self.inparagraph = True
         self.inblockquote = False
         self.inlink = False
-        self.text = ""
-        self.currentparagraph = ""
-        self.headingtext = ""
-        self.blockquote = ""
+        self.text = u''
+        self.currentparagraph = u''
+        self.headingtext = u''
+        self.blockquote = u''
         self.inpre = False
         HTMLParser.__init__(self)
 
@@ -87,11 +87,11 @@ class HTML2Text(HTMLParser):
             self.inlink = True
         elif tag.lower() == "br":
             if self.inparagraph:
-                self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70)) + "\n"
+                self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70)).encode('utf-8') + "\n"
                 self.currentparagraph = ""
             elif self.inblockquote:
-                self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)]) + "\n"
-                self.blockquote = ""
+                self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)]).encode("utf-8") + "\n"
+                self.blockquote = u''
             else:
                 self.text = self.text + "\n"
         elif tag.lower() == "blockquote":
@@ -101,8 +101,8 @@ class HTML2Text(HTMLParser):
             if self.text != "":
                 self.text = self.text + "\n\n"
             if self.inparagraph:
-                self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70))
-            self.currentparagraph = ""
+                self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70)).encode("utf-8")
+            self.currentparagraph = u''
             self.inparagraph = True
         elif tag.lower() == "pre":
             self.text = self.text + "\n"
@@ -113,10 +113,10 @@ class HTML2Text(HTMLParser):
     def handle_startendtag(self, tag, attrs):
         if tag.lower() == "br":
             if self.inparagraph:
-                self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70)) + "\n"
-                self.currentparagraph = ""
+                self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70)).encode("utf-8") + "\n"
+                self.currentparagraph = u''
             elif self.inblockquote:
-                self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)]) + "\n"
+                self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)]).encode("utf-8") + "\n"
                 self.blockquote = ""
             else:
                 self.text = self.text + "\n"
@@ -125,36 +125,36 @@ class HTML2Text(HTMLParser):
         if tag.lower() == "h1":
             self.inheadingone = False
             self.text = self.text + "\n\n" + self.headingtext + "\n" + "=" * len(self.headingtext.strip())
-            self.headingtext = ""
+            self.headingtext = u''
         elif tag.lower() == "h2":
             self.inheadingtwo = False
             self.text = self.text + "\n\n" + self.headingtext + "\n" + "-" * len(self.headingtext.strip())
-            self.headingtext = ""
+            self.headingtext = u''
         elif tag.lower() in ["h3", "h4", "h5", "h6"]:
             self.inotherheading = False
             self.text = self.text + "\n\n" + self.headingtext + "\n" + "~" * len(self.headingtext.strip())
-            self.headingtext = ""
+            self.headingtext = u''
         elif tag.lower() == "p":
             self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70))
             self.inparagraph = False
         elif tag.lower() == "blockquote":
-            self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)]) + "\n"
+            self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)]).encode("utf-8") + "\n"
             self.inblockquote = False
-            self.blockquote = ""
+            self.blockquote = u''
         elif tag.lower() == "pre":
             self.inpre = False
 
     def handle_data(self, data):
         if self.inheadingone or self.inheadingtwo or self.inotherheading:
-            self.headingtext = self.headingtext + data.strip() + " "
+            self.headingtext = self.headingtext + unicode(data, "utf-8").strip() + u' '
         elif self.inblockquote:
-            self.blockquote = self.blockquote + data.strip() + " "
+            self.blockquote = self.blockquote + unicode(data, "utf-8").strip() + u' '
         elif self.inparagraph:
-            self.currentparagraph = self.currentparagraph + data.strip() + " "
+            self.currentparagraph = self.currentparagraph + unicode(data, "utf-8").strip() + u' '
         elif self.inpre:
-            self.text = self.text + data
+            self.text = self.text + data.encode("utf-8")
         else:
-            self.text = self.text + data.strip() + " "
+            self.text = self.text + unicode(data, "utf-8").strip() + u' '
 
     def handle_entityref(self, name):
         entity = name
@@ -191,7 +191,7 @@ def parse_and_deliver(maildir, url, statedir):
         else:
             content = item["summary"]
 
-        md5sum = md5.md5(content.encode("utf8")).hexdigest()
+        md5sum = md5.md5(content.encode("utf-8")).hexdigest()
 
         if db.has_key(url + "|" + item["link"]):
             data = db[url + "|" + item["link"]]
@@ -216,11 +216,11 @@ def parse_and_deliver(maildir, url, statedir):
         msg.add_header("Subject", item["title"])
         msg.set_default_type("text/plain")
 
-        htmlpart = MIMEText(content.encode("utf8"), "html", "utf8")
+        htmlpart = MIMEText(content.encode("utf-8"), "html", "utf-8")
         textparser = HTML2Text()
-        textparser.feed(content.encode("utf8"))
+        textparser.feed(content.encode("utf-8"))
         textcontent = textparser.gettext()
-        textpart = MIMEText(textcontent, "plain", "utf8")
+        textpart = MIMEText(textcontent.encode("utf-8"), "plain", "utf-8")
         msg.attach(textpart)
         msg.attach(htmlpart)
 
