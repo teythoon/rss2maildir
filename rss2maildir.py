@@ -132,7 +132,8 @@ class HTML2Text(HTMLParser):
             else:
                 self.text = self.text \
                     + u' * ' \
-                    + u'\n   '.join([a.strip() for a in textwrap.wrap(self.item, 67)]) \
+                    + u'\n   '.join([a.strip() for a in \
+                        textwrap.wrap(self.item, 67)]) \
                     + u'\n'
                 self.item = u''
 
@@ -250,7 +251,8 @@ class HTML2Text(HTMLParser):
             entity = "&" + name + ";"
 
         if self.inparagraph:
-            self.currentparagraph = self.currentparagraph + unicode(entity, "utf-8")
+            self.currentparagraph = self.currentparagraph \
+                + unicode(entity, "utf-8")
         elif self.inblockquote:
             self.blockquote = self.blockquote + unicode(entity, "utf-8")
         else:
@@ -369,7 +371,8 @@ if options.conf != None:
         configfile = options.conf
     except:
         # should exit here as the specified file doesn't exist
-        sys.stderr.write("Config file %s does not exist. Exiting.\n" %(options.conf,))
+        sys.stderr.write( \
+            "Config file %s does not exist. Exiting.\n" %(options.conf,))
         sys.exit(2)
 else:
     # check through the default locations
@@ -398,7 +401,8 @@ if options.statedir != None:
     try:
         mode = os.stat(state_dir)[stat.ST_MODE]
         if not stat.S_ISDIR(mode):
-            sys.stderr.write("State directory (%s) is not a directory\n" %(state_dir))
+            sys.stderr.write( \
+                "State directory (%s) is not a directory\n" %(state_dir))
             sys.exit(1)
     except:
         # try to make the directory
@@ -412,7 +416,8 @@ elif scp.has_option("general", "state_dir"):
     try:
         mode = os.stat(state_dir)[stat.ST_MODE]
         if not stat.S_ISDIR(mode):
-            sys.stderr.write("State directory (%s) is not a directory\n" %(state_dir))
+            sys.stderr.write( \
+                "State directory (%s) is not a directory\n" %(state_dir))
             sys.exit(1)
     except:
         # try to create it
@@ -420,19 +425,22 @@ elif scp.has_option("general", "state_dir"):
             os.mkdir(new_state_dir)
             state_dir = new_state_dir
         except:
-            sys.stderr.write("Couldn't create state directory %s\n" %(new_state_dir))
+            sys.stderr.write( \
+                "Couldn't create state directory %s\n" %(new_state_dir))
             sys.exit(1)
 else:
     try:
         mode = os.stat(state_dir)[stat.ST_MODE]
         if not stat.S_ISDIR(mode):
-            sys.stderr.write("State directory %s is not a directory\n" %(state_dir))
+            sys.stderr.write( \
+                "State directory %s is not a directory\n" %(state_dir))
             sys.exit(1)
     except:
         try:
             os.mkdir(state_dir)
         except:
-            sys.stderr.write("State directory %s could not be created\n" %(state_dir))
+            sys.stderr.write( \
+                "State directory %s could not be created\n" %(state_dir))
             sys.exit(1)
 
 if scp.has_option("general", "maildir_root"):
@@ -441,7 +449,9 @@ if scp.has_option("general", "maildir_root"):
 try:
     mode = os.stat(maildir_root)[stat.ST_MODE]
     if not stat.S_ISDIR(mode):
-        sys.stderr.write("Maildir Root %s is not a directory\n" %(maildir_root))
+        sys.stderr.write( \
+            "Maildir Root %s is not a directory\n" \
+            %(maildir_root))
         sys.exit(1)
 except:
     try:
@@ -502,7 +512,9 @@ for section in feeds:
             os.mkdir(os.path.join(maildir, "cur"))
             os.mkdir(os.path.join(maildir, "tmp"))
         except:
-            sys.stderr.write("Couldn't create required maildir directories for %s\n" %(section,))
+            sys.stderr.write( \
+                "Couldn't create required maildir directories for %s\n" \
+                %(section,))
             sys.exit(1)
 
     # right - we've got the directories, we've got the section, we know the
