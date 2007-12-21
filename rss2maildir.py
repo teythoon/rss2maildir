@@ -53,7 +53,7 @@ entities = {
     "pound": "£",
     "copy": "©",
     "apos": "'",
-    "quote": "\"",
+    "quot": "\"",
     "nbsp": " ",
     }
 
