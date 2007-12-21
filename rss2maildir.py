@@ -70,6 +70,9 @@ class HTML2Text(HTMLParser):
         self.headingtext = u''
         self.blockquote = u''
         self.inpre = False
+        self.inul = False
+        self.initem = False
+        self.item = u''
         HTMLParser.__init__(self)
 
     def handle_starttag(self, tag, attrs):
@@ -86,21 +89,31 @@ class HTML2Text(HTMLParser):
             self.inlink = True
         elif tag.lower() == "br":
             if self.inparagraph:
-                self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70)).encode('utf-8') + "\n"
+                self.text = self.text \
+                    + u'\n'.join( \
+                        textwrap.wrap(self.currentparagraph, 70)) \
+                    + u'\n'
                 self.currentparagraph = ""
             elif self.inblockquote:
-                self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)]).encode("utf-8") + "\n"
+                self.text = self.text \
+                    + u'\n> ' \
+                    + u'\n> '.join( \
+                        [a.strip() \
+                            for a in textwrap.wrap(self.blockquote, 68) \
+                        ]) \
+                    + u'\n'
                 self.blockquote = u''
             else:
-                self.text = self.text + "\n"
+                self.text = self.text + u'\n'
         elif tag.lower() == "blockquote":
             self.inblockquote = True
-            self.text = self.text + "\n"
+            self.text = self.text + u'\n'
         elif tag.lower() == "p":
             if self.text != "":
-                self.text = self.text + "\n\n"
+                self.text = self.text + u'\n\n'
             if self.inparagraph:
-                self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70)).encode("utf-8")
+                self.text = self.text \
+                    + u'\n'.join(textwrap.wrap(self.currentparagraph, 70))
             self.currentparagraph = u''
             self.inparagraph = True
         elif tag.lower() == "pre":
@@ -108,50 +121,120 @@ class HTML2Text(HTMLParser):
             self.inpre = True
             self.inparagraph = False
             self.inblockquote = False
+        elif tag.lower() == "ul":
+            self.item = u''
+            self.inul = True
+            self.text = self.text + "\n"
+        elif tag.lower() == "li" and self.inul:
+            if not self.initem:
+                self.initem = True
+                self.item = u''
+            else:
+                self.text = self.text \
+                    + u' * ' \
+                    + u'\n   '.join([a.strip() for a in textwrap.wrap(self.item, 67)]) \
+                    + u'\n'
+                self.item = u''
 
     def handle_startendtag(self, tag, attrs):
         if tag.lower() == "br":
             if self.inparagraph:
-                self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70)).encode("utf-8") + "\n"
+                self.text = self.text \
+                + u'\n'.join( \
+                    [a \
+                        for a in textwrap.wrap( \
+                            self.currentparagraph, 70) \
+                    ] \
+                ) \
+                + u'\n'
                 self.currentparagraph = u''
             elif self.inblockquote:
-                self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)]).encode("utf-8") + "\n"
-                self.blockquote = ""
+                self.text = self.text \
+                    + u'\n> ' \
+                    + u'\n> '.join( \
+                        [a \
+                            for a in textwrap.wrap( \
+                                self.blockquote.encode("utf-8") \
+                                , 68) \
+                        ] \
+                    ) \
+                    + u'\n'
+                self.blockquote = u''
             else:
                 self.text = self.text + "\n"
 
     def handle_endtag(self, tag):
         if tag.lower() == "h1":
             self.inheadingone = False
-            self.text = self.text + "\n\n" + self.headingtext + "\n" + "=" * len(self.headingtext.strip())
+            self.text = self.text \
+                + u'\n\n' \
+                + self.headingtext.encode("utf-8") \
+                + u'\n' \
+                + u'=' * len(self.headingtext.encode("utf-8").strip())
             self.headingtext = u''
         elif tag.lower() == "h2":
             self.inheadingtwo = False
-            self.text = self.text + "\n\n" + self.headingtext + "\n" + "-" * len(self.headingtext.strip())
+            self.text = self.text \
+                + u'\n\n' \
+                + self.headingtext.encode("utf-8") \
+                + u'\n' \
+                + u'-' * len(self.headingtext.encode("utf-8").strip())
             self.headingtext = u''
         elif tag.lower() in ["h3", "h4", "h5", "h6"]:
             self.inotherheading = False
-            self.text = self.text + "\n\n" + self.headingtext + "\n" + "~" * len(self.headingtext.strip())
+            self.text = self.text \
+                + u'\n\n' \
+                + self.headingtext.encode("utf-8") \
+                + u'\n' \
+                + u'~' * len(self.headingtext.encode("utf-8").strip())
             self.headingtext = u''
         elif tag.lower() == "p":
-            self.text = self.text + "\n".join(textwrap.wrap(self.currentparagraph, 70))
+            self.text = self.text \
+                + u'\n'.join(textwrap.wrap( \
+                    self.currentparagraph, 70) \
+                )
             self.inparagraph = False
+            self.currentparagraph = u''
         elif tag.lower() == "blockquote":
-            self.text = self.text + "\n> " + "\n> ".join([a.strip() for a in textwrap.wrap(self.blockquote, 68)]).encode("utf-8") + "\n"
+            self.text = self.text \
+                + u'\n> ' \
+                + u'\n> '.join( \
+                    [a.strip() for a in textwrap.wrap(self.blockquote, 68)] \
+                    ).encode("utf-8") \
+                + u'\n'
             self.inblockquote = False
             self.blockquote = u''
         elif tag.lower() == "pre":
             self.inpre = False
+        elif tag.lower() == "li":
+            self.initem = False
+            if self.item != "":
+                self.text = self.text \
+                    + u' * ' \
+                    + u'\n   '.join( \
+                        [a.strip() for a in textwrap.wrap(self.item, 67)]) \
+                    + u'\n'
+            self.item = u''
+        elif tag.lower() == "ul":
+            self.inul = False
 
     def handle_data(self, data):
         if self.inheadingone or self.inheadingtwo or self.inotherheading:
-            self.headingtext = self.headingtext + unicode(data, "utf-8").strip() + u' '
+            self.headingtext = self.headingtext \
+                + unicode(data, "utf-8").strip() \
+                + u' '
         elif self.inblockquote:
-            self.blockquote = self.blockquote + unicode(data, "utf-8").strip() + u' '
+            self.blockquote = self.blockquote \
+                + unicode(data, "utf-8").strip() \
+                + u' '
         elif self.inparagraph:
-            self.currentparagraph = self.currentparagraph + unicode(data, "utf-8").strip() + u' '
+            self.currentparagraph = self.currentparagraph \
+                + unicode(data, "utf-8").strip() \
+                + u' '
+        elif self.inul and self.initem:
+            self.item = self.item + unicode(data, "utf-8")
         elif self.inpre:
-            self.text = self.text + data.encode("utf-8")
+            self.text = self.text + unicode(data, "utf-8")
         else:
             self.text = self.text + unicode(data, "utf-8").strip() + u' '
 
@@ -204,12 +287,20 @@ def parse_and_deliver(maildir, url, statedir):
 
         # create a basic email message
         msg = MIMEMultipart("alternative")
-        messageid = "<" + datetime.datetime.now().strftime("%Y%m%d%H%M") + "." + "".join([random.choice(string.ascii_letters + string.digits) for a in range(0,6)]) + "@" + socket.gethostname() + ">"
+        messageid = "<" \
+            + datetime.datetime.now().strftime("%Y%m%d%H%M") \
+            + "." \
+            + "".join( \
+                [random.choice( \
+                    string.ascii_letters + string.digits \
+                    ) for a in range(0,6) \
+                ]) + "@" + socket.gethostname() + ">"
         msg.add_header("Message-ID", messageid)
         msg.set_unixfrom("\"%s\" <rss2maildir@localhost>" %(url))
         msg.add_header("From", "\"%s\" <rss2maildir@localhost>" %(author))
         msg.add_header("To", "\"%s\" <rss2maildir@localhost>" %(url))
-        createddate = datetime.datetime(*item["updated_parsed"][0:6]).strftime("%a, %e %b %Y %T -0000")
+        createddate = datetime.datetime(*item["updated_parsed"][0:6]) \
+            .strftime("%a, %e %b %Y %T -0000")
         msg.add_header("Date", createddate)
         msg.add_header("Subject", item["title"])
         msg.set_default_type("text/plain")
@@ -224,7 +315,14 @@ def parse_and_deliver(maildir, url, statedir):
 
         # start by working out the filename we should be writting to, we do
         # this following the normal maildir style rules
-        fname = str(os.getpid()) + "." + socket.gethostname() + "." + "".join([random.choice(string.ascii_letters + string.digits) for a in range(0,10)]) + "." + datetime.datetime.now().strftime('%s')
+        fname = str(os.getpid()) \
+            + "." + socket.gethostname() \
+            + "." + "".join( \
+                [random.choice( \
+                    string.ascii_letters + string.digits \
+                    ) for a in range(0,10) \
+                ]) + "." \
+            + datetime.datetime.now().strftime('%s')
         fn = os.path.join(maildir, "tmp", fname)
         fh = open(fn, "w")
         fh.write(msg.as_string())
@@ -235,7 +333,11 @@ def parse_and_deliver(maildir, url, statedir):
         os.unlink(fn)
 
         # now add to the database about the item
-        data = urllib.urlencode((("message-id", messageid), ("created", createddate), ("contentmd5", md5sum)))
+        data = urllib.urlencode((
+            ("message-id", messageid), \
+            ("created", createddate), \
+            ("contentmd5", md5sum) \
+            ))
         db[url + "|" + item["link"]] = data
 
     db.close()
