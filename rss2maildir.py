@@ -157,10 +157,20 @@ class HTML2Text(HTMLParser):
             self.text = self.text + data.strip() + " "
 
     def handle_entityref(self, name):
+        entity = name
         if entities.has_key(name.lower()):
-            self.text = self.text + entities[name.lower()]
+            entity = entities[name.lower()]
+        elif name[0] == "#":
+            entity = unichr(int(name[1:]))
         else:
-            self.text = self.text + "&" + name + ";"
+            entity = "&" + name + ";"
+
+        if self.inparagraph:
+            self.currentparagraph = self.currentparagraph + entity
+        elif self.inblockquote:
+            self.blockquote = self.blockquote + entity
+        else:
+            self.text = self.text + entity
 
     def gettext(self):
         data = self.text
