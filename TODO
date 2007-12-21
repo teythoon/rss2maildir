@@ -1,0 +1,7 @@
+* add ol and dl support
+* add multilevel list support
+* normalise the number of spaces in formatted text
+* add references to urls
+* add references to images
+* add OPML support
+* table support (this is where it's going to get confusing!)
