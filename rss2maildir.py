@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import mailbox
 import sys
 import os
 import stat
@@ -179,7 +178,6 @@ class HTML2Text(HTMLParser):
         return data
 
 def parse_and_deliver(maildir, url, statedir):
-    md = mailbox.Maildir(maildir)
     fp = feedparser.parse(url)
     db = dbm.open(os.path.join(statedir, "seen"), "c")
     for item in fp["items"]:
