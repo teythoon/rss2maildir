@@ -20,6 +20,7 @@
 import sys
 import os
 import stat
+import httplib
 import urllib
 
 import feedparser
@@ -57,7 +58,7 @@ entities = {
     }
 
 class HTML2Text(HTMLParser):
-    
+
     def __init__(self):
         self.inheadingone = False
         self.inheadingtwo = False
@@ -252,7 +253,57 @@ class HTML2Text(HTMLParser):
         return data
 
 def parse_and_deliver(maildir, url, statedir):
-    fp = feedparser.parse(url)
+    feedhandle = None
+    headers = None
+    # first check if we know about this feed already
+    feeddb = dbm.open(os.path.join(statedir, "feeds"), "c")
+    # we need all the parts of the url 
+    (type, rest) = urllib.splittype(url)
+    (host, path) = urllib.splithost(rest)
+    (host, port) = urllib.splitport(host)
+    if port == None:
+        port = 80
+    if feeddb.has_key(url):
+        data = feeddb[url]
+        data = cgi.parse_qs(data)
+        # now do a head on the feed to see if it's been updated
+        conn = httplib.HTTPConnection("%s:%s" %(host, port))
+        conn.request("HEAD", path)
+        response = conn.getresponse()
+        headers = response.getheaders()
+        ischanged = False
+        try:
+            for header in headers:
+                if header[0] == "content-length":
+                    if header[1] != data["content-length"][0]:
+                        ischanged = True
+                elif header[0] == "etag":
+                    if header[1] != data["etag"][0]:
+                        ischanged = True
+                elif header[0] == "last-modified":
+                    if header[1] != data["last-modified"][0]:
+                        ischanged = True
+                elif header[0] == "content-md5":
+                    if header[1] != data["content-md5"][0]:
+                        ischanged = True
+        except:
+            ischanged = True
+        if ischanged:
+            conn = httplib.HTTPConnection("%s:%s" %(host, port))
+            conn.request("GET", path)
+            response = conn.getresponse()
+            headers = response.getheaders()
+            feedhandle = response
+        else:
+            return # don't need to do anything, nothings changed.
+    else:
+        conn = httplib.HTTPConnection("%s:%s" %(host, port))
+        conn.request("GET", path)
+        response = conn.getresponse()
+        headers = response.getheaders()
+        feedhandle = response
+
+    fp = feedparser.parse(feedhandle)
     db = dbm.open(os.path.join(statedir, "seen"), "c")
     for item in fp["items"]:
         # have we seen it before?
@@ -339,7 +390,17 @@ def parse_and_deliver(maildir, url, statedir):
             ))
         db[url + "|" + item["link"]] = data
 
+    if headers:
+        data = []
+        for header in headers:
+            if header[0] in ["content-md5", "etag", "last-modified", "content-length"]:
+                data.append((header[0], header[1]))
+        if len(data) > 0:
+            data = urllib.urlencode(data)
+            feeddb[url] = data
+
     db.close()
+    feeddb.close()
 
 # first off, parse the command line arguments
 
