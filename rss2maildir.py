@@ -339,6 +339,15 @@ def parse_and_deliver(maildir, url, statedir):
 
         prevmessageid = None
 
+        # check if there's a guid too - if that exists and we match the md5,
+        # return
+        if item.has_key("guid"):
+            if db.has_key(url + "|" + item["guid"]):
+                data = db[url + "|" + item["guid"]]
+                data = cgi.parse_qs(data)
+                if data["contentmd5"][0] == md5sum:
+                    continue
+
         if db.has_key(url + "|" + item["link"]):
             data = db[url + "|" + item["link"]]
             data = cgi.parse_qs(data)
@@ -409,12 +418,31 @@ def parse_and_deliver(maildir, url, statedir):
         # now add to the database about the item
         if prevmessageid:
             messageid = prevmessageid + " " + messageid
-        data = urllib.urlencode((
-            ("message-id", messageid), \
-            ("created", createddate), \
-            ("contentmd5", md5sum) \
-            ))
-        db[url + "|" + item["link"]] = data
+        if item.has_key("guid") and item["guid"] != item["link"]:
+            data = urllib.urlencode(( \
+                ("message-id", messageid), \
+                ("created", createddate), \
+                ("contentmd5", md5sum) \
+                ))
+            db[url + "|" + item["guid"]] = data
+            try:
+                data = db[url + "|" + item["link"]]
+                data = cgi.parse_qs(data)
+                newdata = urllib.urlencode(( \
+                    ("message-id", messageid), \
+                    ("created", data["created"][0]), \
+                    ("contentmd5", data["contentmd5"][0]) \
+                    ))
+                db[url + "|" + item["link"]] = newdata
+            except:
+                db[url + "|" + item["link"]] = data
+        else:
+            data = urllib.urlencode(( \
+                ("message-id", messageid), \
+                ("created", createddate), \
+                ("contentmd5", md5sum) \
+                ))
+            db[url + "|" + item["link"]] = data
 
     if headers:
         data = []
