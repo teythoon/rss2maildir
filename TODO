@@ -1,4 +1,3 @@
-* follow 302
 * add ol and dl support
 * add multilevel list support
 * normalise the number of spaces in formatted text

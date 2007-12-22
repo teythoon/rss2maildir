@@ -252,25 +252,42 @@ class HTML2Text(HTMLParser):
             data = data + "\n".join(textwrap.wrap(self.currentparagraph, 70))
         return data
 
+def open_url(method, url):
+    redirectcount = 0
+    while redirectcount < 3:
+        (type, rest) = urllib.splittype(url)
+        (host, path) = urllib.splithost(rest)
+        (host, port) = urllib.splitport(host)
+        if port == None:
+            port = 80
+        try:
+            conn = httplib.HTTPConnection("%s:%s" %(host, port))
+            conn.request(method, path)
+            response = conn.getresponse()
+            if response.status in [301, 302, 303, 307]:
+                headers = response.getheaders()
+                for header in headers:
+                    if header[0] == "location":
+                        url = header[1]
+            elif response.status == 200:
+                return response
+        except:
+            pass
+        redirectcount = redirectcount + 1
+    return None
+
 def parse_and_deliver(maildir, url, statedir):
     feedhandle = None
     headers = None
     # first check if we know about this feed already
     feeddb = dbm.open(os.path.join(statedir, "feeds"), "c")
-    # we need all the parts of the url 
-    (type, rest) = urllib.splittype(url)
-    (host, path) = urllib.splithost(rest)
-    (host, port) = urllib.splitport(host)
-    if port == None:
-        port = 80
     if feeddb.has_key(url):
         data = feeddb[url]
         data = cgi.parse_qs(data)
-        # now do a head on the feed to see if it's been updated
-        conn = httplib.HTTPConnection("%s:%s" %(host, port))
-        conn.request("HEAD", path)
-        response = conn.getresponse()
-        headers = response.getheaders()
+        response = open_url("HEAD", url)
+        headers = None
+        if response:
+            headers = response.getheaders()
         ischanged = False
         try:
             for header in headers:
@@ -289,24 +306,23 @@ def parse_and_deliver(maildir, url, statedir):
         except:
             ischanged = True
         if ischanged:
-            conn = httplib.HTTPConnection("%s:%s" %(host, port))
-            conn.request("GET", path)
-            response = conn.getresponse()
-            headers = response.getheaders()
-            feedhandle = response
+            response = open_url("GET", url)
+            if response != None:
+                headers = response.getheaders()
+                feedhandle = response
+            else:
+                sys.stderr.write("Failed to fetch feed: %s\n" %(url))
+                return
         else:
             return # don't need to do anything, nothings changed.
     else:
-        conn = httplib.HTTPConnection("%s:%s" %(host, port))
-        conn.request("GET", path)
-        response = None
-        try:
-            response = conn.getresponse()
-        except:
-            print "Failed to fetch feed: %s" %(url)
+        response = open_url("GET", url)
+        if response != None:
+            headers = response.getheaders()
+            feedhandle = response
+        else:
+            sys.stderr.write("Failed to fetch feed: %s\n" %(url))
             return
-        headers = response.getheaders()
-        feedhandle = response
 
     fp = feedparser.parse(feedhandle)
     db = dbm.open(os.path.join(statedir, "seen"), "c")
