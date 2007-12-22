@@ -392,6 +392,9 @@ def parse_and_deliver(maildir, url, statedir):
         textparser = HTML2Text()
         textparser.feed(content.encode("utf-8"))
         textcontent = textparser.gettext()
+        textcontent = "%s\n\nItem URL: %s" %( \
+            textcontent, \
+            item["link"] )
         textpart = MIMEText(textcontent.encode("utf-8"), "plain", "utf-8")
         msg.attach(textpart)
         msg.attach(htmlpart)
