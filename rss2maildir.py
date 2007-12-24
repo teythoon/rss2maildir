@@ -249,6 +249,8 @@ class HTML2Text(HTMLParser):
         data = self.text
         if self.inparagraph:
             data = data + "\n".join(textwrap.wrap(self.currentparagraph, 70))
+        if data[-1] != '\n':
+            data = data + '\n'
         return data
 
 def open_url(method, url):
