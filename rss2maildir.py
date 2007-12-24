@@ -46,18 +46,17 @@ import dbm
 
 from HTMLParser import HTMLParser
 
-entities = {
-    "amp": "&",
-    "lt": "<",
-    "gt": ">",
-    "pound": "£",
-    "copy": "©",
-    "apos": "'",
-    "quot": "\"",
-    "nbsp": " ",
-    }
-
 class HTML2Text(HTMLParser):
+    entities = {
+        "amp": "&",
+        "lt": "<",
+        "gt": ">",
+        "pound": "£",
+        "copy": "©",
+        "apos": "'",
+        "quot": "\"",
+        "nbsp": " ",
+        }
 
     def __init__(self):
         self.inheadingone = False
@@ -231,8 +230,8 @@ class HTML2Text(HTMLParser):
 
     def handle_entityref(self, name):
         entity = name
-        if entities.has_key(name.lower()):
-            entity = entities[name.lower()]
+        if HTML2Text.entities.has_key(name.lower()):
+            entity = HTML2Text.entities[name.lower()]
         elif name[0] == "#":
             entity = unichr(int(name[1:]))
         else:
@@ -464,178 +463,182 @@ def parse_and_deliver(maildir, url, statedir):
     db.close()
     feeddb.close()
 
-# first off, parse the command line arguments
+if __name__ == "__main__":
+    # This only gets executed if we really called the program
+    # first off, parse the command line arguments
 
-oparser = OptionParser()
-oparser.add_option(
-    "-c", "--conf", dest="conf",
-    help="location of config file"
-    )
-oparser.add_option(
-    "-s", "--statedir", dest="statedir",
-    help="location of directory to store state in"
-    )
+    oparser = OptionParser()
+    oparser.add_option(
+        "-c", "--conf", dest="conf",
+        help="location of config file"
+        )
+    oparser.add_option(
+        "-s", "--statedir", dest="statedir",
+        help="location of directory to store state in"
+        )
 
-(options, args) = oparser.parse_args()
+    (options, args) = oparser.parse_args()
 
-# check for the configfile
+    # check for the configfile
 
-configfile = None
+    configfile = None
 
-if options.conf != None:
-    # does the file exist?
-    try:
-        os.stat(options.conf)
-        configfile = options.conf
-    except:
-        # should exit here as the specified file doesn't exist
-        sys.stderr.write( \
-            "Config file %s does not exist. Exiting.\n" %(options.conf,))
-        sys.exit(2)
-else:
-    # check through the default locations
-    try:
-        os.stat("%s/.rss2maildir.conf" %(os.environ["HOME"],))
-        configfile = "%s/.rss2maildir.conf" %(os.environ["HOME"],)
-    except:
+    if options.conf != None:
+        # does the file exist?
         try:
-            os.stat("/etc/rss2maildir.conf")
-            configfile = "/etc/rss2maildir.conf"
+            os.stat(options.conf)
+            configfile = options.conf
         except:
-            sys.stderr.write("No config file found. Exiting.\n")
+            # should exit here as the specified file doesn't exist
+            sys.stderr.write( \
+                "Config file %s does not exist. Exiting.\n" %(options.conf,))
             sys.exit(2)
+    else:
+        # check through the default locations
+        try:
+            os.stat("%s/.rss2maildir.conf" %(os.environ["HOME"],))
+            configfile = "%s/.rss2maildir.conf" %(os.environ["HOME"],)
+        except:
+            try:
+                os.stat("/etc/rss2maildir.conf")
+                configfile = "/etc/rss2maildir.conf"
+            except:
+                sys.stderr.write("No config file found. Exiting.\n")
+                sys.exit(2)
 
-# Right - if we've got this far, we've got a config file, now for the hard
-# bits...
+    # Right - if we've got this far, we've got a config file, now for the hard
+    # bits...
 
-scp = SafeConfigParser()
-scp.read(configfile)
+    scp = SafeConfigParser()
+    scp.read(configfile)
 
-maildir_root = "RSSMaildir"
-state_dir = "state"
+    maildir_root = "RSSMaildir"
+    state_dir = "state"
 
-if options.statedir != None:
-    state_dir = options.statedir
+    if options.statedir != None:
+        state_dir = options.statedir
+        try:
+            mode = os.stat(state_dir)[stat.ST_MODE]
+            if not stat.S_ISDIR(mode):
+                sys.stderr.write( \
+                    "State directory (%s) is not a directory\n" %(state_dir))
+                sys.exit(1)
+        except:
+            # try to make the directory
+            try:
+                os.mkdir(state_dir)
+            except:
+                sys.stderr.write("Couldn't create statedir %s" %(state_dir))
+                sys.exit(1)
+    elif scp.has_option("general", "state_dir"):
+        new_state_dir = scp.get("general", "state_dir")
+        try:
+            mode = os.stat(state_dir)[stat.ST_MODE]
+            if not stat.S_ISDIR(mode):
+                sys.stderr.write( \
+                    "State directory (%s) is not a directory\n" %(state_dir))
+                sys.exit(1)
+        except:
+            # try to create it
+            try:
+                os.mkdir(new_state_dir)
+                state_dir = new_state_dir
+            except:
+                sys.stderr.write( \
+                    "Couldn't create state directory %s\n" %(new_state_dir))
+                sys.exit(1)
+    else:
+        try:
+            mode = os.stat(state_dir)[stat.ST_MODE]
+            if not stat.S_ISDIR(mode):
+                sys.stderr.write( \
+                    "State directory %s is not a directory\n" %(state_dir))
+                sys.exit(1)
+        except:
+            try:
+                os.mkdir(state_dir)
+            except:
+                sys.stderr.write( \
+                    "State directory %s could not be created\n" %(state_dir))
+                sys.exit(1)
+
+    if scp.has_option("general", "maildir_root"):
+        maildir_root = scp.get("general", "maildir_root")
+
     try:
-        mode = os.stat(state_dir)[stat.ST_MODE]
+        mode = os.stat(maildir_root)[stat.ST_MODE]
         if not stat.S_ISDIR(mode):
             sys.stderr.write( \
-                "State directory (%s) is not a directory\n" %(state_dir))
-            sys.exit(1)
-    except:
-        # try to make the directory
-        try:
-            os.mkdir(state_dir)
-        except:
-            sys.stderr.write("Couldn't create statedir %s" %(state_dir))
-            sys.exit(1)
-elif scp.has_option("general", "state_dir"):
-    new_state_dir = scp.get("general", "state_dir")
-    try:
-        mode = os.stat(state_dir)[stat.ST_MODE]
-        if not stat.S_ISDIR(mode):
-            sys.stderr.write( \
-                "State directory (%s) is not a directory\n" %(state_dir))
-            sys.exit(1)
-    except:
-        # try to create it
-        try:
-            os.mkdir(new_state_dir)
-            state_dir = new_state_dir
-        except:
-            sys.stderr.write( \
-                "Couldn't create state directory %s\n" %(new_state_dir))
-            sys.exit(1)
-else:
-    try:
-        mode = os.stat(state_dir)[stat.ST_MODE]
-        if not stat.S_ISDIR(mode):
-            sys.stderr.write( \
-                "State directory %s is not a directory\n" %(state_dir))
+                "Maildir Root %s is not a directory\n" \
+                %(maildir_root))
             sys.exit(1)
     except:
         try:
-            os.mkdir(state_dir)
+            os.mkdir(maildir_root)
         except:
-            sys.stderr.write( \
-                "State directory %s could not be created\n" %(state_dir))
+            sys.stderr.write("Couldn't create Maildir Root %s\n" \
+                %(maildir_root))
             sys.exit(1)
 
-if scp.has_option("general", "maildir_root"):
-    maildir_root = scp.get("general", "maildir_root")
-
-try:
-    mode = os.stat(maildir_root)[stat.ST_MODE]
-    if not stat.S_ISDIR(mode):
-        sys.stderr.write( \
-            "Maildir Root %s is not a directory\n" \
-            %(maildir_root))
-        sys.exit(1)
-except:
+    feeds = scp.sections()
     try:
-        os.mkdir(maildir_root)
+        feeds.remove("general")
     except:
-        sys.stderr.write("Couldn't create Maildir Root %s\n" %(maildir_root))
-        sys.exit(1)
+        pass
 
-feeds = scp.sections()
-try:
-    feeds.remove("general")
-except:
-    pass
+    for section in feeds:
+        # check if the directory exists
+        maildir = None
+        try:
+            maildir = scp.get(section, "maildir")
+        except:
+            maildir = section
 
-for section in feeds:
-    # check if the directory exists
-    maildir = None
-    try:
-        maildir = scp.get(section, "maildir")
-    except:
-        maildir = section
+        maildir = urllib.urlencode(((section, maildir),)).split("=")[1]
+        maildir = os.path.join(maildir_root, maildir)
 
-    maildir = urllib.urlencode(((section, maildir),)).split("=")[1]
-    maildir = os.path.join(maildir_root, maildir)
-
-    try:
-        exists = os.stat(maildir)
-        if stat.S_ISDIR(exists[stat.ST_MODE]):
-            # check if there's a new, cur and tmp directory
+        try:
+            exists = os.stat(maildir)
+            if stat.S_ISDIR(exists[stat.ST_MODE]):
+                # check if there's a new, cur and tmp directory
+                try:
+                    mode = os.stat(os.path.join(maildir, "cur"))[stat.ST_MODE]
+                except:
+                    os.mkdir(os.path.join(maildir, "cur"))
+                    if not stat.S_ISDIR(mode):
+                        sys.stderr.write("Broken maildir: %s\n" %(maildir))
+                try:
+                    mode = os.stat(os.path.join(maildir, "tmp"))[stat.ST_MODE]
+                except:
+                    os.mkdir(os.path.join(maildir, "tmp"))
+                    if not stat.S_ISDIR(mode):
+                        sys.stderr.write("Broken maildir: %s\n" %(maildir))
+                try:
+                    mode = os.stat(os.path.join(maildir, "new"))[stat.ST_MODE]
+                    if not stat.S_ISDIR(mode):
+                        sys.stderr.write("Broken maildir: %s\n" %(maildir))
+                except:
+                    os.mkdir(os.path.join(maildir, "new"))
+            else:
+                sys.stderr.write("Broken maildir: %s\n" %(maildir))
+        except:
             try:
-                mode = os.stat(os.path.join(maildir, "cur"))[stat.ST_MODE]
+                os.mkdir(maildir)
             except:
-                os.mkdir(os.path.join(maildir, "cur"))
-                if not stat.S_ISDIR(mode):
-                    sys.stderr.write("Broken maildir: %s\n" %(maildir))
+                sys.stderr.write("Couldn't create root maildir %s\n" \
+                    %(maildir))
+                sys.exit(1)
             try:
-                mode = os.stat(os.path.join(maildir, "tmp"))[stat.ST_MODE]
-            except:
-                os.mkdir(os.path.join(maildir, "tmp"))
-                if not stat.S_ISDIR(mode):
-                    sys.stderr.write("Broken maildir: %s\n" %(maildir))
-            try:
-                mode = os.stat(os.path.join(maildir, "new"))[stat.ST_MODE]
-                if not stat.S_ISDIR(mode):
-                    sys.stderr.write("Broken maildir: %s\n" %(maildir))
-            except:
                 os.mkdir(os.path.join(maildir, "new"))
-        else:
-            sys.stderr.write("Broken maildir: %s\n" %(maildir))
-    except:
-        try:
-            os.mkdir(maildir)
-        except:
-            sys.stderr.write("Couldn't create root maildir %s\n" %(maildir))
-            sys.exit(1)
-        try:
-            os.mkdir(os.path.join(maildir, "new"))
-            os.mkdir(os.path.join(maildir, "cur"))
-            os.mkdir(os.path.join(maildir, "tmp"))
-        except:
-            sys.stderr.write( \
-                "Couldn't create required maildir directories for %s\n" \
-                %(section,))
-            sys.exit(1)
+                os.mkdir(os.path.join(maildir, "cur"))
+                os.mkdir(os.path.join(maildir, "tmp"))
+            except:
+                sys.stderr.write( \
+                    "Couldn't create required maildir directories for %s\n" \
+                    %(section,))
+                sys.exit(1)
 
-    # right - we've got the directories, we've got the section, we know the
-    # url... lets play!
+        # right - we've got the directories, we've got the section, we know the
+        # url... lets play!
 
-    parse_and_deliver(maildir, section, state_dir)
+        parse_and_deliver(maildir, section, state_dir)
