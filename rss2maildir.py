@@ -109,7 +109,7 @@ class HTML2Text(HTMLParser):
             self.item = u''
             self.inul = True
             self.text = self.text + "\n"
-        elif tag.lower() == "li" and self.inul:
+        elif tag.lower() == "li":
             if not self.initem:
                 self.initem = True
                 self.item = u''
@@ -120,6 +120,7 @@ class HTML2Text(HTMLParser):
                         textwrap.wrap(self.item, 67)]) \
                     + u'\n'
                 self.item = u''
+                self.initem = True
 
     def handle_startendtag(self, tag, attrs):
         if tag.lower() == "br":
@@ -198,7 +199,7 @@ class HTML2Text(HTMLParser):
             self.inpre = False
         elif tag.lower() == "li":
             self.initem = False
-            if self.item != "":
+            if self.item != u'':
                 self.text = self.text \
                     + u' * ' \
                     + u'\n   '.join( \
@@ -217,12 +218,12 @@ class HTML2Text(HTMLParser):
             self.blockquote = self.blockquote \
                 + unicode(data, "utf-8").strip() \
                 + u' '
+        elif self.initem:
+            self.item = self.item + unicode(data, "utf-8")
         elif self.inparagraph:
             self.currentparagraph = self.currentparagraph \
                 + unicode(data, "utf-8").strip() \
                 + u' '
-        elif self.inul and self.initem:
-            self.item = self.item + unicode(data, "utf-8")
         elif self.inpre:
             self.text = self.text + unicode(data, "utf-8")
         else:
