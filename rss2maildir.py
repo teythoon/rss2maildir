@@ -58,179 +58,155 @@ class HTML2Text(HTMLParser):
         "nbsp": " ",
         }
 
+    blockleveltags = [
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "pre",
+        "p",
+        "ul",
+        "ol",
+        "dl",
+        "br",
+        ]
+
+    liststarttags = [
+        "ul",
+        "ol",
+        "dl",
+        ]
+
+    cancontainflow = [
+        "div",
+        "li",
+        "dd",
+        "blockquote",
+    ]
+
     def __init__(self,textwidth=70):
-        self.inheadingone = False
-        self.inheadingtwo = False
-        self.inotherheading = False
-        self.inparagraph = True
-        self.inblockquote = False
-        self.inlink = False
         self.text = u''
-        self.currentparagraph = u''
-        self.headingtext = u''
-        self.blockquote = u''
-        self.inpre = False
-        self.inul = False
-        self.initem = False
-        self.item = u''
+        self.curdata = u''
         self.textwidth = textwidth
+        self.opentags = []
+        self.indentlevel = 0
         HTMLParser.__init__(self)
 
     def handle_starttag(self, tag, attrs):
-        if tag.lower() == "h1":
-            self.inheadingone = True
-            self.inparagraph = False
-        elif tag.lower() == "h2":
-            self.inheadingtwo = True
-            self.inparagraph = False
-        elif tag.lower() in ["h3", "h4", "h5", "h6"]:
-            self.inotherheading = True
-            self.inparagraph = False
-        elif tag.lower() == "a":
-            self.inlink = True
-        elif tag.lower() == "br":
-            self.handle_br()
-        elif tag.lower() == "blockquote":
-            self.inblockquote = True
-            self.text = self.text + u'\n'
-        elif tag.lower() == "p":
-            if self.text != "":
-                self.text = self.text + u'\n\n'
-            if self.inparagraph:
-                self.text = self.text \
-                    + u'\n'.join(textwrap.wrap(self.currentparagraph, self.textwidth))
-            self.currentparagraph = u''
-            self.inparagraph = True
-        elif tag.lower() == "pre":
-            self.text = self.text + "\n"
-            self.inpre = True
-            self.inparagraph = False
-            self.inblockquote = False
-        elif tag.lower() == "ul":
-            self.item = u''
-            self.inul = True
-            self.text = self.text + "\n"
-        elif tag.lower() == "li":
-            if not self.initem:
-                self.initem = True
-                self.item = u''
-            else:
-                self.text = self.text \
-                    + u' * ' \
-                    + u'\n   '.join([a.strip() for a in \
-                        textwrap.wrap(self.item, self.textwidth - 3)]) \
-                    + u'\n'
-                self.item = u''
-                self.initem = True
+        tag_name = tag.lower()
+        if tag_name in self.blockleveltags:
+            # handle starting a new block - unless we're in a block element
+            # that can contain other blocks, we'll assume that we want to close
+            # the container
+            if tag_name == u'br':
+                self.handle_curdata()
+                self.opentags.append(tag_name)
+                self.opentags.pop()
+
+            if len(self.opentags) > 0:
+                self.handle_curdata()
+                self.opentags.pop()
+            self.opentags.append(tag_name)
+        else:
+            self.handle_curdata()
+            self.opentags.append(tag_name)
 
     def handle_startendtag(self, tag, attrs):
-        if tag.lower() == "br":
-            self.handle_br()
+        if tag.lower() == u'br':
+            self.tags.append(u'br')
+            self.handle_curdata() # just handle the data, don't do anything else
+            self.tags.pop()
 
-    def handle_br(self):
-            if self.inparagraph:
-                self.text = self.text \
-                + u'\n'.join( \
-                    [a \
-                        for a in textwrap.wrap( \
-                            self.currentparagraph, self.textwidth) \
-                    ] \
-                ) \
-                + u'\n'
-                self.currentparagraph = u''
-            elif self.inblockquote:
-                self.text = self.text \
-                    + u'\n> ' \
-                    + u'\n> '.join( \
-                        [a \
-                            for a in textwrap.wrap( \
-                                self.blockquote.encode("utf-8") \
-                                , 68) \
-                        ] \
-                    ) \
-                    + u'\n'
-                self.blockquote = u''
+    def handle_curdata(self):
+        if len(self.opentags) == 0:
+            return
+
+        tag_thats_done = self.opentags[-1]
+
+        if tag_thats_done in self.blockleveltags:
+            newlinerequired = self.text != u''
+            if newlinerequired:
+                self.text = self.text + u'\n\n'
+
+        if tag_thats_done in ["h1", "h2", "h3", "h4", "h5", "h6"]:
+            underline = u''
+            underlinechar = u'='
+            headingtext = self.curdata.encode("utf-8").strip()
+            headingtext = u'\n'.join( \
+                textwrap.wrap(headingtext, self.textwidth))
+
+            if tag_thats_done == u'h2':
+                underlinechar = u'-'
+            elif tag_thats_done != u'h1':
+                underlinechar = u'~'
+
+            if u'\n' in headingtext:
+                underline = underlinechar * self.textwidth
             else:
-                self.text = self.text + "\n"
+                underline = underlinechar * len(headingtext)
+            self.text = self.text \
+                + headingtext.encode("utf-8") + u'\n' \
+                + underline
+        elif tag_thats_done == "p":
+            paragraph = self.curdata.encode("utf-8").strip()
+            self.text = self.text \
+                + u'\n'.join(textwrap.wrap(paragraph, self.textwidth))
+        elif tag_thats_done == "pre":
+            self.text = self.text + self.curdata
+        elif tag_thats_done == "blockquote":
+            quote = self.curdata.encode("utf-8").strip()
+            self.text = self.text \
+                + u'> ' \
+                + u'> '.join(textwrap.wrap(quote, self.textwidth - 2))
+        elif tag_thats_done == "li":
+            item = self.curdata.encode("utf-8").strip()
+            if len(self.text) > 0 and self.text[-1] != u'\n':
+                self.text = self.text + u'\n'
+            self.text = self.text \
+                + u' * ' \
+                + u'\n   '.join( \
+                    textwrap.wrap(item, self.textwidth - 3))
+            self.curdata = u''
+        elif tag_thats_done in self.liststarttags:
+            pass
+        else:
+            # we've got no idea what this tag does, so we'll
+            # make an assumption that we're not going to know later
+            if len(self.curdata) > 0:
+                self.text = self.text \
+                    + u' ... ' \
+                    + u'\n ... '.join( \
+                        textwrap.wrap(self.curdata, self.textwidth - 5))
+            self.curdata = u''
+
+        if tag_thats_done in self.blockleveltags:
+            self.curdata = u''
 
     def handle_endtag(self, tag):
-        if tag.lower() == "h1":
-            self.inheadingone = False
-            self.text = self.text \
-                + u'\n\n' \
-                + self.headingtext.encode("utf-8") \
-                + u'\n' \
-                + u'=' * len(self.headingtext.encode("utf-8").strip())
-            self.headingtext = u''
-        elif tag.lower() == "h2":
-            self.inheadingtwo = False
-            self.text = self.text \
-                + u'\n\n' \
-                + self.headingtext.encode("utf-8") \
-                + u'\n' \
-                + u'-' * len(self.headingtext.encode("utf-8").strip())
-            self.headingtext = u''
-        elif tag.lower() in ["h3", "h4", "h5", "h6"]:
-            self.inotherheading = False
-            self.text = self.text \
-                + u'\n\n' \
-                + self.headingtext.encode("utf-8") \
-                + u'\n' \
-                + u'~' * len(self.headingtext.encode("utf-8").strip())
-            self.headingtext = u''
-        elif tag.lower() == "p":
-            self.text = self.text \
-                + u'\n'.join(textwrap.wrap( \
-                    self.currentparagraph, self.textwidth) \
-                )
-            self.inparagraph = False
-            self.currentparagraph = u''
-        elif tag.lower() == "blockquote":
-            self.text = self.text \
-                + u'\n> ' \
-                + u'\n> '.join( \
-                    [a.strip() \
-                        for a in textwrap.wrap( \
-                            self.blockquote, self.textwidth - 2)] \
-                    ) \
-                + u'\n'
-            self.inblockquote = False
-            self.blockquote = u''
-        elif tag.lower() == "pre":
-            self.inpre = False
-        elif tag.lower() == "li":
-            self.initem = False
-            if self.item != u'':
-                self.text = self.text \
-                    + u' * ' \
-                    + u'\n   '.join( \
-                        [a.strip() for a in textwrap.wrap(self.item, self.textwidth - 3)]) \
-                    + u'\n'
-            self.item = u''
-        elif tag.lower() == "ul":
-            self.inul = False
+        try:
+            tagindex = self.opentags.index(tag)
+        except:
+            # closing tag we know nothing about.
+            # err. weird.
+            tagindex = 0
+
+        while tagindex < len(self.opentags) \
+            and tag in self.opentags[tagindex+1:]:
+            try:
+                tagindex = self.opentags.index(tag, tagindex+1)
+            except:
+                # well, we don't want to do that then
+                pass
+        if tagindex != len(self.opentags) - 1:
+            # Assuming the data was for the last opened tag first
+            self.handle_curdata()
+            # Now kill the list to be a slice before this tag was opened
+            self.opentags = self.opentags[:tagindex]
 
     def handle_data(self, data):
-        if self.inheadingone or self.inheadingtwo or self.inotherheading:
-            self.headingtext = self.headingtext \
-                + unicode(data, "utf-8").strip() \
-                + u' '
-        elif self.inblockquote:
-            self.blockquote = self.blockquote \
-                + unicode(data, "utf-8").strip() \
-                + u' '
-        elif self.initem:
-            self.item = self.item + unicode(data, "utf-8")
-        elif self.inparagraph:
-            self.currentparagraph = self.currentparagraph \
-                + unicode(data, "utf-8").strip() \
-                + u' '
-        elif self.inpre:
-            self.text = self.text + unicode(data, "utf-8")
-        else:
-            isallwhitespace = data.strip() == ""
-            if not isallwhitespace:
-                self.text = self.text + unicode(data, "utf-8").strip() + u' ' 
+        self.curdata = self.curdata + unicode(data, "utf-8")
 
     def handle_entityref(self, name):
         entity = name
@@ -241,21 +217,14 @@ class HTML2Text(HTMLParser):
         else:
             entity = "&" + name + ";"
 
-        if self.inparagraph:
-            self.currentparagraph = self.currentparagraph \
-                + unicode(entity, "utf-8")
-        elif self.inblockquote:
-            self.blockquote = self.blockquote + unicode(entity, "utf-8")
-        else:
-            self.text = self.text + unicode(entity, "utf-8")
+        self.curdata = self.curdata + unicode(entity, "utf-8")
 
     def gettext(self):
-        data = self.text
-        if self.inparagraph:
-            data = data + "\n".join(textwrap.wrap(self.currentparagraph, self.textwidth))
-        if data[-1] != '\n':
-            data = data + '\n'
-        return data
+        self.handle_curdata()
+        if len(self.text) == 0 or self.text[-1] != u'\n':
+            self.text = self.text + u'\n'
+        self.opentags = []
+        return self.text
 
 def open_url(method, url):
     redirectcount = 0
