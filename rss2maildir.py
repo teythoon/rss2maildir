@@ -227,7 +227,9 @@ class HTML2Text(HTMLParser):
         elif self.inpre:
             self.text = self.text + unicode(data, "utf-8")
         else:
-            self.text = self.text + unicode(data, "utf-8").strip() + u' '
+            isallwhitespace = data.strip()
+            if isallwhitespace != "" and self.text[-1] == "\n":
+                self.text = self.text + unicode(data, "utf-8").strip() + u' '
 
     def handle_entityref(self, name):
         entity = name
