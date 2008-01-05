@@ -58,7 +58,7 @@ class HTML2Text(HTMLParser):
         "nbsp": " ",
         }
 
-    def __init__(self):
+    def __init__(self,textwidth=70):
         self.inheadingone = False
         self.inheadingtwo = False
         self.inotherheading = False
@@ -73,6 +73,7 @@ class HTML2Text(HTMLParser):
         self.inul = False
         self.initem = False
         self.item = u''
+        self.textwidth = textwidth
         HTMLParser.__init__(self)
 
     def handle_starttag(self, tag, attrs):
@@ -97,7 +98,7 @@ class HTML2Text(HTMLParser):
                 self.text = self.text + u'\n\n'
             if self.inparagraph:
                 self.text = self.text \
-                    + u'\n'.join(textwrap.wrap(self.currentparagraph, 70))
+                    + u'\n'.join(textwrap.wrap(self.currentparagraph, self.textwidth))
             self.currentparagraph = u''
             self.inparagraph = True
         elif tag.lower() == "pre":
@@ -117,7 +118,7 @@ class HTML2Text(HTMLParser):
                 self.text = self.text \
                     + u' * ' \
                     + u'\n   '.join([a.strip() for a in \
-                        textwrap.wrap(self.item, 67)]) \
+                        textwrap.wrap(self.item, self.textwidth - 3)]) \
                     + u'\n'
                 self.item = u''
                 self.initem = True
@@ -132,7 +133,7 @@ class HTML2Text(HTMLParser):
                 + u'\n'.join( \
                     [a \
                         for a in textwrap.wrap( \
-                            self.currentparagraph, 70) \
+                            self.currentparagraph, self.textwidth) \
                     ] \
                 ) \
                 + u'\n'
@@ -180,7 +181,7 @@ class HTML2Text(HTMLParser):
         elif tag.lower() == "p":
             self.text = self.text \
                 + u'\n'.join(textwrap.wrap( \
-                    self.currentparagraph, 70) \
+                    self.currentparagraph, self.textwidth) \
                 )
             self.inparagraph = False
             self.currentparagraph = u''
@@ -190,7 +191,7 @@ class HTML2Text(HTMLParser):
                 + u'\n> '.join( \
                     [a.strip() \
                         for a in textwrap.wrap( \
-                            self.blockquote, 68)] \
+                            self.blockquote, self.textwidth - 2)] \
                     ) \
                 + u'\n'
             self.inblockquote = False
@@ -203,7 +204,7 @@ class HTML2Text(HTMLParser):
                 self.text = self.text \
                     + u' * ' \
                     + u'\n   '.join( \
-                        [a.strip() for a in textwrap.wrap(self.item, 67)]) \
+                        [a.strip() for a in textwrap.wrap(self.item, self.textwidth - 3)]) \
                     + u'\n'
             self.item = u''
         elif tag.lower() == "ul":
@@ -251,7 +252,7 @@ class HTML2Text(HTMLParser):
     def gettext(self):
         data = self.text
         if self.inparagraph:
-            data = data + "\n".join(textwrap.wrap(self.currentparagraph, 70))
+            data = data + "\n".join(textwrap.wrap(self.currentparagraph, self.textwidth))
         if data[-1] != '\n':
             data = data + '\n'
         return data
