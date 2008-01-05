@@ -8,7 +8,7 @@ class UnorderedListTests(unittest.TestCase):
     def setUp(self):
         self.inputpath = os.path.sep.join(os.path.dirname(os.path.realpath(__file__)).split(os.path.sep)[0:-1])
 
-    def testwellformedlist(self):
+    def testWellFormedList(self):
         try:
             from rss2maildir import HTML2Text
         except:
@@ -25,7 +25,7 @@ class UnorderedListTests(unittest.TestCase):
         output = parser.gettext()
         self.assertEqual(output, expectedoutput)
 
-    def testbadlyformed(self):
+    def testBadlyFormedList(self):
         try:
             from rss2maildir import HTML2Text
         except:
@@ -42,6 +42,12 @@ class UnorderedListTests(unittest.TestCase):
         parser.feed(input)
         output = parser.gettext()
         self.assertEqual(output, expectedoutput)
+
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(UnorderedListTests("testWellFormedList"))
+    suite.addTest(UnorderedListTests("testBadlyFormedList"))
+    return suite
 
 if __name__ == "__main__":
     unittest.main()
