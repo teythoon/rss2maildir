@@ -92,6 +92,7 @@ class HTML2Text(HTMLParser):
         self.textwidth = textwidth
         self.opentags = []
         self.indentlevel = 0
+        self.listcount = []
         HTMLParser.__init__(self)
 
     def handle_starttag(self, tag, attrs):
@@ -105,11 +106,33 @@ class HTML2Text(HTMLParser):
                 self.opentags.append(tag_name)
                 self.opentags.pop()
 
+            if tag_name == u'ol':
+                self.handle_curdata()
+                self.listcount.append(1)
+                self.listlevel = len(self.listcount) - 1
+
+            if tag_name in self.liststarttags:
+                smallist = self.opentags[-3:]
+                smallist.reverse()
+                for prev_listtag in smallist:
+                    if prev_listtag in [u'dl', u'ol']:
+                        self.indentlevel = self.indentlevel + 4
+                        break
+                    elif prev_listtag == u'ul':
+                        self.indentlevel = self.indentlevel + 3
+                        break
+
             if len(self.opentags) > 0:
                 self.handle_curdata()
-                self.opentags.pop()
+                if tag_name not in self.cancontainflow:
+                    self.opentags.pop()
             self.opentags.append(tag_name)
         else:
+            listcount = 0
+            try:
+                listcount = self.listcount[-1]
+            except:
+                pass
             self.handle_curdata()
             self.opentags.append(tag_name)
 
@@ -126,19 +149,31 @@ class HTML2Text(HTMLParser):
         if len(self.curdata) == 0:
             return
 
+        if len(self.curdata.strip()) == 0:
+            return
+
         tag_thats_done = self.opentags[-1]
 
         if tag_thats_done in self.blockleveltags:
             newlinerequired = self.text != u''
             if newlinerequired:
-                self.text = self.text + u'\n\n'
+                if newlinerequired \
+                    and len(self.text) > 2 \
+                    and self.text[-1] != u'\n' \
+                    and self.text[-2] != u'\n':
+                    self.text = self.text + u'\n\n'
 
         if tag_thats_done in ["h1", "h2", "h3", "h4", "h5", "h6"]:
             underline = u''
             underlinechar = u'='
             headingtext = self.curdata.encode("utf-8").strip()
-            headingtext = u'\n'.join( \
-                textwrap.wrap(headingtext, self.textwidth))
+            seperator = u'\n' + u' '*self.indentlevel
+            headingtext = seperator.join( \
+                textwrap.wrap( \
+                    headingtext, \
+                    self.textwidth - self.indentlevel \
+                    ) \
+                )
 
             if tag_thats_done == u'h2':
                 underlinechar = u'-'
@@ -146,37 +181,76 @@ class HTML2Text(HTMLParser):
                 underlinechar = u'~'
 
             if u'\n' in headingtext:
-                underline = underlinechar * self.textwidth
+                underline = u' ' * self.indentlevel \
+                    + underlinechar * (self.textwidth - self.indentlevel)
             else:
-                underline = underlinechar * len(headingtext)
+                underline = u' ' * self.indentlevel \
+                    + underlinechar * len(headingtext)
             self.text = self.text \
                 + headingtext.encode("utf-8") + u'\n' \
                 + underline
         elif tag_thats_done == "p":
             paragraph = self.curdata.encode("utf-8").strip()
+            seperator = u'\n' + u' ' * self.indentlevel
             self.text = self.text \
-                + u'\n'.join(textwrap.wrap(paragraph, self.textwidth))
+                + u' ' * self.indentlevel \
+                + seperator.join(textwrap.wrap(paragraph, self.textwidth - self.indentlevel))
         elif tag_thats_done == "pre":
             self.text = self.text + self.curdata
         elif tag_thats_done == "blockquote":
             quote = self.curdata.encode("utf-8").strip()
+            seperator = u'\n' + u' ' * self.indentlevel + u'> '
             self.text = self.text \
                 + u'> ' \
-                + u'> '.join(textwrap.wrap(quote, self.textwidth - 2))
+                + seperator.join( \
+                    textwrap.wrap( \
+                        quote, \
+                        self.textwidth - self.indentlevel - 2 \
+                    )
+                )
         elif tag_thats_done == "li":
             item = self.curdata.encode("utf-8").strip()
             if len(self.text) > 0 and self.text[-1] != u'\n':
                 self.text = self.text + u'\n'
+            # work out if we're in an ol rather than a ul
+            latesttags = self.opentags[-4:]
+            latesttags.reverse()
+            isul = False
+            for thing in latesttags:
+                if thing == 'ul':
+                    isul = True
+                    break
+                elif thing == 'ol':
+                    isul = False
+                    break
+
+            listindent = 3
+            if not isul:
+                listindent = 4
+
+            listmarker = u' * '
+            if not isul:
+                listmarker = u' %2d. ' %(self.listcount[-1])
+                self.listcount[-1] = self.listcount[-1] + 1
+
+            seperator = u'\n' \
+                + u' ' * self.indentlevel \
+                + u' ' * listindent
             self.text = self.text \
-                + u' * ' \
-                + u'\n   '.join( \
-                    textwrap.wrap(item, self.textwidth - 3))
+                + u' ' * self.indentlevel \
+                + listmarker \
+                + seperator.join( \
+                    textwrap.wrap( \
+                        item, \
+                        self.textwidth - self.indentlevel - listindent \
+                    ) \
+                )
             self.curdata = u''
         elif tag_thats_done == "dt":
             definition = self.curdata.encode("utf-8").strip()
             if len(self.text) > 0 and self.text[-1] != u'\n':
                 self.text = self.text + u'\n\n'
-            elif len(self.text) > 0 and self.text[-2] != u'\n':
+            elif len(self.text) > 1 and self.text[-2] != u'\n':
                 self.text = self.text + u'\n'
             definition = definition + "::"
             self.text = self.text \
@@ -185,13 +259,18 @@ class HTML2Text(HTMLParser):
             self.curdata = u''
         elif tag_thats_done == "dd":
             definition = self.curdata.encode("utf-8").strip()
-            if len(self.text) > 0 and self.text[-1] != u'\n':
-                self.text = self.text + u'\n'
-            self.text = self.text \
-                + '    ' \
-                + '\n    '.join( \
-                    textwrap.wrap(definition, self.textwidth - 4))
-            self.curdata = u''
+            if len(definition) > 0:
+                if len(self.text) > 0 and self.text[-1] != u'\n':
+                    self.text = self.text + u'\n'
+                self.text = self.text \
+                    + '    ' \
+                    + '\n    '.join( \
+                        textwrap.wrap( \
+                            definition, \
+                            self.textwidth - self.indentlevel - 4 \
+                            ) \
+                        )
+                self.curdata = u''
         elif tag_thats_done in self.liststarttags:
             pass
         else:
@@ -215,6 +294,24 @@ class HTML2Text(HTMLParser):
             # err. weird.
             tagindex = 0
 
+        tag = tag.lower()
+
+        if tag in self.liststarttags:
+            if tag in [u'ol', u'dl', u'ul']:
+                # find if there was a previous list level
+                smalllist = self.opentags[:-1]
+                smalllist.reverse()
+                for prev_listtag in smalllist:
+                    if prev_listtag in [u'ol', u'dl']:
+                        self.indentlevel = self.indentlevel - 4
+                        break
+                    elif prev_listtag == u'ul':
+                        self.indentlevel = self.indentlevel - 3
+                        break
+
+        if tag == u'ol':
+            self.listcount = self.listcount[:-1]
+
         while tagindex < len(self.opentags) \
             and tag in self.opentags[tagindex+1:]:
             try:
@@ -226,7 +323,11 @@ class HTML2Text(HTMLParser):
             # Assuming the data was for the last opened tag first
             self.handle_curdata()
             # Now kill the list to be a slice before this tag was opened
-            self.opentags = self.opentags[:tagindex]
+            self.opentags = self.opentags[:tagindex + 1]
+        else:
+            self.handle_curdata()
+            if self.opentags[-1] == tag:
+                self.opentags.pop()
 
     def handle_data(self, data):
         self.curdata = self.curdata + unicode(data, "utf-8")

@@ -1,0 +1,7 @@
+When the clock strikes one::
+     * bullet point 1
+     * bullet point 2
+
+When the clock strikes two::
+      1. first item
+      2. second item

@@ -8,10 +8,10 @@ import ParsingTests
 
 class UnorderedListTests(ParsingTests.ParsingTest):
     def testWellFormedList(self):
-        return self.runParsingTest("unordered-wellformed")
+        return self.runParsingTest("unorderedlist-wellformed")
 
     def testBadlyFormedList(self):
-        return self.runParsingTest("unordered-badlyformed")
+        return self.runParsingTest("unorderedlist-badlyformed")
 
 def suite():
     suite = unittest.TestSuite()
