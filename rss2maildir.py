@@ -123,6 +123,9 @@ class HTML2Text(HTMLParser):
         if len(self.opentags) == 0:
             return
 
+        if len(self.curdata) == 0:
+            return
+
         tag_thats_done = self.opentags[-1]
 
         if tag_thats_done in self.blockleveltags:
@@ -168,6 +171,26 @@ class HTML2Text(HTMLParser):
                 + u' * ' \
                 + u'\n   '.join( \
                     textwrap.wrap(item, self.textwidth - 3))
+            self.curdata = u''
+        elif tag_thats_done == "dt":
+            definition = self.curdata.encode("utf-8").strip()
+            if len(self.text) > 0 and self.text[-1] != u'\n':
+                self.text = self.text + u'\n\n'
+            elif len(self.text) > 0 and self.text[-2] != u'\n':
+                self.text = self.text + u'\n'
+            definition = definition + "::"
+            self.text = self.text \
+                + '\n '.join(
+                    textwrap.wrap(definition, self.textwidth - 1))
+            self.curdata = u''
+        elif tag_thats_done == "dd":
+            definition = self.curdata.encode("utf-8").strip()
+            if len(self.text) > 0 and self.text[-1] != u'\n':
+                self.text = self.text + u'\n'
+            self.text = self.text \
+                + '    ' \
+                + '\n    '.join( \
+                    textwrap.wrap(definition, self.textwidth - 4))
             self.curdata = u''
         elif tag_thats_done in self.liststarttags:
             pass
@@ -224,6 +247,10 @@ class HTML2Text(HTMLParser):
         if len(self.text) == 0 or self.text[-1] != u'\n':
             self.text = self.text + u'\n'
         self.opentags = []
+        if len(self.text) > 0:
+            while len(self.text) > 1 and self.text[-1] == u'\n':
+                self.text = self.text[:-1]
+            self.text = self.text + u'\n'
         return self.text
 
 def open_url(method, url):
