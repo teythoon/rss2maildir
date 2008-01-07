@@ -1,5 +1,3 @@
-* add ol and dl support
-* add multilevel list support
 * normalise the number of spaces in formatted text
 * parse the subject/from/to lines and replace entities
 * add references to urls
