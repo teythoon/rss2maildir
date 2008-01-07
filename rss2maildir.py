@@ -106,13 +106,16 @@ class HTML2Text(HTMLParser):
                 self.opentags.append(tag_name)
                 self.opentags.pop()
 
+            if len(self.opentags) > 1 and self.opentags[-1] == u'li':
+                self.handle_curdata()
+
             if tag_name == u'ol':
                 self.handle_curdata()
                 self.listcount.append(1)
                 self.listlevel = len(self.listcount) - 1
 
             if tag_name in self.liststarttags:
-                smallist = self.opentags[-3:]
+                smallist = self.opentags[-3:-1]
                 smallist.reverse()
                 for prev_listtag in smallist:
                     if prev_listtag in [u'dl', u'ol']:
@@ -133,6 +136,16 @@ class HTML2Text(HTMLParser):
                 listcount = self.listcount[-1]
             except:
                 pass
+
+            if tag_name == u'dd' and len(self.opentags) > 1 \
+                and self.opentags[-1] == u'dt':
+                self.handle_curdata()
+                self.opentags.pop()
+            elif tag_name == u'dt' and len(self.opentags) > 1 \
+                and self.opentags[-1] == u'dd':
+                self.handle_curdata()
+                self.opentags.pop()
+
             self.handle_curdata()
             self.opentags.append(tag_name)
 
@@ -189,7 +202,7 @@ class HTML2Text(HTMLParser):
             self.text = self.text \
                 + headingtext.encode("utf-8") + u'\n' \
                 + underline
-        elif tag_thats_done == "p":
+        elif tag_thats_done == u'p':
             paragraph = self.curdata.encode("utf-8").strip()
             seperator = u'\n' + u' ' * self.indentlevel
             self.text = self.text \
@@ -246,25 +259,28 @@ class HTML2Text(HTMLParser):
                     ) \
                 )
             self.curdata = u''
-        elif tag_thats_done == "dt":
+        elif tag_thats_done == u'dt':
             definition = self.curdata.encode("utf-8").strip()
             if len(self.text) > 0 and self.text[-1] != u'\n':
                 self.text = self.text + u'\n\n'
             elif len(self.text) > 1 and self.text[-2] != u'\n':
                 self.text = self.text + u'\n'
-            definition = definition + "::"
+            definition = u' ' * self.indentlevel + definition + "::"
+            indentstring = u'\n' + u' ' * (self.indentlevel + 1)
             self.text = self.text \
-                + '\n '.join(
-                    textwrap.wrap(definition, self.textwidth - 1))
+                + indentstring.join(
+                    textwrap.wrap(definition, \
+                        self.textwidth - self.indentlevel - 1))
             self.curdata = u''
-        elif tag_thats_done == "dd":
+        elif tag_thats_done == u'dd':
             definition = self.curdata.encode("utf-8").strip()
             if len(definition) > 0:
                 if len(self.text) > 0 and self.text[-1] != u'\n':
                     self.text = self.text + u'\n'
+                indentstring = u'\n' + u' ' * (self.indentlevel + 4)
                 self.text = self.text \
-                    + '    ' \
-                    + '\n    '.join( \
+                    + u' ' * (self.indentlevel + 4) \
+                    + indentstring.join( \
                         textwrap.wrap( \
                             definition, \
                             self.textwidth - self.indentlevel - 4 \
@@ -298,6 +314,7 @@ class HTML2Text(HTMLParser):
 
         if tag in self.liststarttags:
             if tag in [u'ol', u'dl', u'ul']:
+                self.handle_curdata()
                 # find if there was a previous list level
                 smalllist = self.opentags[:-1]
                 smalllist.reverse()
