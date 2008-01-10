@@ -151,9 +151,9 @@ class HTML2Text(HTMLParser):
 
     def handle_startendtag(self, tag, attrs):
         if tag.lower() == u'br':
-            self.tags.append(u'br')
+            self.opentags.append(u'br')
             self.handle_curdata() # just handle the data, don't do anything else
-            self.tags.pop()
+            self.opentags.pop()
 
     def handle_curdata(self):
         if len(self.opentags) == 0:
