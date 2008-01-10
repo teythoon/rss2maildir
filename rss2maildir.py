@@ -93,6 +93,7 @@ class HTML2Text(HTMLParser):
         self.opentags = []
         self.indentlevel = 0
         self.listcount = []
+        self.urls = []
         HTMLParser.__init__(self)
 
     def handle_starttag(self, tag, attrs):
@@ -145,6 +146,13 @@ class HTML2Text(HTMLParser):
                 and self.opentags[-1] == u'dd':
                 self.handle_curdata()
                 self.opentags.pop()
+            elif tag_name == u'a':
+                for attr in attrs:
+                    if attr[0].lower() == u'href':
+                        self.urls.append(attr[1])
+                self.curdata = self.curdata + u'`'
+                self.opentags.append(tag_name)
+                return
 
             self.handle_curdata()
             self.opentags.append(tag_name)
@@ -293,6 +301,9 @@ class HTML2Text(HTMLParser):
                             ) \
                         )
                 self.curdata = u''
+        elif tag_thats_done == u'a':
+            self.curdata = self.curdata + u'`__'
+            pass
         elif tag_thats_done in self.liststarttags:
             pass
         else:
@@ -378,6 +389,9 @@ class HTML2Text(HTMLParser):
             while len(self.text) > 1 and self.text[-1] == u'\n':
                 self.text = self.text[:-1]
             self.text = self.text + u'\n'
+        if len(self.urls) > 0:
+            self.text = self.text + u'\n__ ' + u'\n__ '.join(self.urls) + u'\n'
+            self.urls = []
         return self.text
 
 def open_url(method, url):
