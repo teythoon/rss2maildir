@@ -179,7 +179,8 @@ class HTML2Text(HTMLParser):
         if tag_thats_done in ["h1", "h2", "h3", "h4", "h5", "h6"]:
             underline = u''
             underlinechar = u'='
-            headingtext = self.curdata.encode("utf-8").strip()
+            headingtext = unicode( \
+                self.curdata.encode("utf-8").strip(), "utf-8")
             seperator = u'\n' + u' '*self.indentlevel
             headingtext = seperator.join( \
                 textwrap.wrap( \
@@ -203,15 +204,20 @@ class HTML2Text(HTMLParser):
                 + headingtext.encode("utf-8") + u'\n' \
                 + underline
         elif tag_thats_done == u'p':
-            paragraph = self.curdata.encode("utf-8").strip()
+            paragraph = unicode( \
+                self.curdata.strip().encode("utf-8"), "utf-8")
             seperator = u'\n' + u' ' * self.indentlevel
             self.text = self.text \
                 + u' ' * self.indentlevel \
-                + seperator.join(textwrap.wrap(paragraph, self.textwidth - self.indentlevel))
+                + seperator.join( \
+                    textwrap.wrap( \
+                        paragraph, self.textwidth - self.indentlevel))
         elif tag_thats_done == "pre":
-            self.text = self.text + self.curdata
+            self.text = self.text + unicode( \
+                self.curdata.encode("utf-8"), "utf-8")
         elif tag_thats_done == "blockquote":
-            quote = self.curdata.encode("utf-8").strip()
+            quote = unicode( \
+                self.curdata.encode("utf-8").strip(), "utf-8")
             seperator = u'\n' + u' ' * self.indentlevel + u'> '
             self.text = self.text \
                 + u'> ' \
@@ -222,13 +228,13 @@ class HTML2Text(HTMLParser):
                     )
                 )
         elif tag_thats_done == "li":
-            item = self.curdata.encode("utf-8").strip()
+            item = unicode(self.curdata.encode("utf-8").strip(), "utf-8")
             if len(self.text) > 0 and self.text[-1] != u'\n':
                 self.text = self.text + u'\n'
             # work out if we're in an ol rather than a ul
             latesttags = self.opentags[-4:]
             latesttags.reverse()
-            isul = False
+            isul = None
             for thing in latesttags:
                 if thing == 'ul':
                     isul = True
@@ -242,7 +248,7 @@ class HTML2Text(HTMLParser):
                 listindent = 4
 
             listmarker = u' * '
-            if not isul:
+            if isul == False:
                 listmarker = u' %2d. ' %(self.listcount[-1])
                 self.listcount[-1] = self.listcount[-1] + 1
 
@@ -260,7 +266,7 @@ class HTML2Text(HTMLParser):
                 )
             self.curdata = u''
         elif tag_thats_done == u'dt':
-            definition = self.curdata.encode("utf-8").strip()
+            definition = unicode(self.curdata.encode("utf-8").strip(), "utf-8")
             if len(self.text) > 0 and self.text[-1] != u'\n':
                 self.text = self.text + u'\n\n'
             elif len(self.text) > 1 and self.text[-2] != u'\n':
@@ -273,7 +279,7 @@ class HTML2Text(HTMLParser):
                         self.textwidth - self.indentlevel - 1))
             self.curdata = u''
         elif tag_thats_done == u'dd':
-            definition = self.curdata.encode("utf-8").strip()
+            definition = unicode(self.curdata.encode("utf-8").strip(), "utf-8")
             if len(definition) > 0:
                 if len(self.text) > 0 and self.text[-1] != u'\n':
                     self.text = self.text + u'\n'
@@ -296,7 +302,10 @@ class HTML2Text(HTMLParser):
                 self.text = self.text \
                     + u' ... ' \
                     + u'\n ... '.join( \
-                        textwrap.wrap(self.curdata, self.textwidth - 5))
+                        textwrap.wrap( \
+                            unicode( \
+                                self.curdata.encode("utf-8").strip(), \
+                                "utf-8"), self.textwidth - 5))
             self.curdata = u''
 
         if tag_thats_done in self.blockleveltags:
@@ -574,7 +583,8 @@ def parse_and_deliver(maildir, url, statedir):
     if headers:
         data = []
         for header in headers:
-            if header[0] in ["content-md5", "etag", "last-modified", "content-length"]:
+            if header[0] in \
+                ["content-md5", "etag", "last-modified", "content-length"]:
                 data.append((header[0], header[1]))
         if len(data) > 0:
             data = urllib.urlencode(data)
