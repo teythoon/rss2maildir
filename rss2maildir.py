@@ -48,42 +48,43 @@ from HTMLParser import HTMLParser
 
 class HTML2Text(HTMLParser):
     entities = {
-        "amp": "&",
-        "lt": "<",
-        "gt": ">",
-        "pound": "£",
-        "copy": "©",
-        "apos": "'",
-        "quot": "\"",
-        "nbsp": " ",
+        u'amp': "&",
+        u'lt': "<",
+        u'gt': ">",
+        u'pound': "£",
+        u'copy': "©",
+        u'apos': "'",
+        u'quot': "\"",
+        u'nbsp': " ",
         }
 
     blockleveltags = [
-        "h1",
-        "h2",
-        "h3",
-        "h4",
-        "h5",
-        "h6",
-        "pre",
-        "p",
-        "ul",
-        "ol",
-        "dl",
-        "br",
+        u'h1',
+        u'h2',
+        u'h3',
+        u'h4',
+        u'h5',
+        u'h6',
+        u'pre',
+        u'p',
+        u'ul',
+        u'ol',
+        u'dl',
+        u'div',
+        #u'blockquote',
         ]
 
     liststarttags = [
-        "ul",
-        "ol",
-        "dl",
+        u'ul',
+        u'ol',
+        u'dl',
         ]
 
     cancontainflow = [
-        "div",
-        "li",
-        "dd",
-        "blockquote",
+        u'div',
+        u'li',
+        u'dd',
+        u'blockquote',
     ]
 
     def __init__(self,textwidth=70):
@@ -92,6 +93,7 @@ class HTML2Text(HTMLParser):
         self.textwidth = textwidth
         self.opentags = []
         self.indentlevel = 0
+        self.ignorenodata = False
         self.listcount = []
         self.urls = []
         HTMLParser.__init__(self)
@@ -102,11 +104,6 @@ class HTML2Text(HTMLParser):
             # handle starting a new block - unless we're in a block element
             # that can contain other blocks, we'll assume that we want to close
             # the container
-            if tag_name == u'br':
-                self.handle_curdata()
-                self.opentags.append(tag_name)
-                self.opentags.pop()
-
             if len(self.opentags) > 1 and self.opentags[-1] == u'li':
                 self.handle_curdata()
 
@@ -132,6 +129,8 @@ class HTML2Text(HTMLParser):
                     self.opentags.pop()
             self.opentags.append(tag_name)
         else:
+            if tag_name == "span":
+                return
             listcount = 0
             try:
                 listcount = self.listcount[-1]
@@ -153,35 +152,81 @@ class HTML2Text(HTMLParser):
                 self.curdata = self.curdata + u'`'
                 self.opentags.append(tag_name)
                 return
-
-            self.handle_curdata()
-            self.opentags.append(tag_name)
+            elif tag_name == u'img':
+                self.handle_image(attrs)
+                return
+            elif tag_name == u'br':
+                self.handle_br()
+                return
+            else:
+                # we don't know the tag, so lets avoid handling it!
+                return 
 
     def handle_startendtag(self, tag, attrs):
         if tag.lower() == u'br':
+            self.handle_br()
+        elif tag.lower() == u'img':
+            self.handle_image(attrs)
+            return
+
+    def handle_br(self):
+            self.handle_curdata()
             self.opentags.append(u'br')
-            self.handle_curdata() # just handle the data, don't do anything else
+            self.handle_curdata()
             self.opentags.pop()
 
+    def handle_image(self, attrs):
+        alt = u''
+        url = u''
+        for attr in attrs:
+            if attr[0] == 'alt':
+                alt = attr[1]
+            elif attr[0] == 'src':
+                url = attr[1]
+        if url:
+            self.curdata = self.curdata \
+                + u' [img:' \
+                + unicode( \
+                    url.encode('utf-8'), \
+                    'utf-8')
+            if alt:
+                self.curdata = self.curdata \
+                    + u'(' \
+                    + unicode( \
+                        alt.encode('utf-8'), \
+                        'utf-8') \
+                    + u')'
+            self.curdata = self.curdata \
+                + u']'
+
     def handle_curdata(self):
+
         if len(self.opentags) == 0:
             return
 
+        tag_thats_done = self.opentags[-1]
+
         if len(self.curdata) == 0:
+            return
+
+        if tag_thats_done == u'br':
+            if len(self.text) == 0 or self.text[-1] != '\n':
+                self.text = self.text + '\n'
+                self.ignorenodata = True
             return
 
         if len(self.curdata.strip()) == 0:
             return
 
-        tag_thats_done = self.opentags[-1]
-
         if tag_thats_done in self.blockleveltags:
             newlinerequired = self.text != u''
-            if newlinerequired:
-                if newlinerequired \
-                    and len(self.text) > 2 \
-                    and self.text[-1] != u'\n' \
-                    and self.text[-2] != u'\n':
+            if self.ignorenodata:
+                newlinerequired = False
+            self.ignorenodata = False
+            if newlinerequired \
+                and len(self.text) > 2 \
+                and self.text[-1] != u'\n' \
+                and self.text[-2] != u'\n':
                     self.text = self.text + u'\n\n'
 
         if tag_thats_done in ["h1", "h2", "h3", "h4", "h5", "h6"]:
@@ -211,7 +256,7 @@ class HTML2Text(HTMLParser):
             self.text = self.text \
                 + headingtext.encode("utf-8") + u'\n' \
                 + underline
-        elif tag_thats_done == u'p':
+        elif tag_thats_done in [u'p', u'div']:
             paragraph = unicode( \
                 self.curdata.strip().encode("utf-8"), "utf-8")
             seperator = u'\n' + u' ' * self.indentlevel
@@ -223,10 +268,12 @@ class HTML2Text(HTMLParser):
         elif tag_thats_done == "pre":
             self.text = self.text + unicode( \
                 self.curdata.encode("utf-8"), "utf-8")
-        elif tag_thats_done == "blockquote":
+        elif tag_thats_done == u'blockquote':
             quote = unicode( \
                 self.curdata.encode("utf-8").strip(), "utf-8")
             seperator = u'\n' + u' ' * self.indentlevel + u'> '
+            if len(self.text) > 0 and self.text[-1] != u'\n':
+                self.text = self.text + u'\n'
             self.text = self.text \
                 + u'> ' \
                 + seperator.join( \
@@ -235,6 +282,7 @@ class HTML2Text(HTMLParser):
                         self.textwidth - self.indentlevel - 2 \
                     )
                 )
+            self.curdata = u''
         elif tag_thats_done == "li":
             item = unicode(self.curdata.encode("utf-8").strip(), "utf-8")
             if len(self.text) > 0 and self.text[-1] != u'\n':
@@ -306,31 +354,25 @@ class HTML2Text(HTMLParser):
             pass
         elif tag_thats_done in self.liststarttags:
             pass
-        else:
-            # we've got no idea what this tag does, so we'll
-            # make an assumption that we're not going to know later
-            if len(self.curdata) > 0:
-                self.text = self.text \
-                    + u' ... ' \
-                    + u'\n ... '.join( \
-                        textwrap.wrap( \
-                            unicode( \
-                                self.curdata.encode("utf-8").strip(), \
-                                "utf-8"), self.textwidth - 5))
-            self.curdata = u''
 
         if tag_thats_done in self.blockleveltags:
             self.curdata = u''
 
+        self.ignorenodata = False
+
     def handle_endtag(self, tag):
+        self.ignorenodata = False
+        if tag == "span":
+            return
+
         try:
             tagindex = self.opentags.index(tag)
         except:
-            # closing tag we know nothing about.
-            # err. weird.
-            tagindex = 0
-
+            return
         tag = tag.lower()
+
+        if tag in [u'br', u'img']:
+            return
 
         if tag in self.liststarttags:
             if tag in [u'ol', u'dl', u'ul']:
@@ -367,6 +409,8 @@ class HTML2Text(HTMLParser):
                 self.opentags.pop()
 
     def handle_data(self, data):
+        if len(self.opentags) == 0:
+            self.opentags.append(u'p')
         self.curdata = self.curdata + unicode(data, "utf-8")
 
     def handle_entityref(self, name):
