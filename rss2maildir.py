@@ -724,11 +724,13 @@ if __name__ == "__main__":
     elif scp.has_option("general", "state_dir"):
         new_state_dir = scp.get("general", "state_dir")
         try:
-            mode = os.stat(state_dir)[stat.ST_MODE]
+            mode = os.stat(new_state_dir)[stat.ST_MODE]
             if not stat.S_ISDIR(mode):
                 sys.stderr.write( \
                     "State directory (%s) is not a directory\n" %(state_dir))
                 sys.exit(1)
+            else:
+                state_dir = new_state_dir
         except:
             # try to create it
             try:
