@@ -180,21 +180,17 @@ class HTML2Text(HTMLParser):
         url = u''
         for attr in attrs:
             if attr[0] == 'alt':
-                alt = attr[1]
+                alt = attr[1].decode('utf-8')
             elif attr[0] == 'src':
-                url = attr[1]
+                url = attr[1].decode('utf-8')
         if url:
             self.curdata = self.curdata \
                 + u' [img:' \
-                + unicode( \
-                    url.encode('utf-8'), \
-                    'utf-8')
+                + url
             if alt:
                 self.curdata = self.curdata \
                     + u'(' \
-                    + unicode( \
-                        alt.encode('utf-8'), \
-                        'utf-8') \
+                    + alt \
                     + u')'
             self.curdata = self.curdata \
                 + u']'
