@@ -70,6 +70,9 @@ class HTML2Text(HTMLParser):
         u'ul',
         u'ol',
         u'dl',
+        u'li',
+        u'dt',
+        u'dd',
         u'div',
         #u'blockquote',
         ]
@@ -219,10 +222,14 @@ class HTML2Text(HTMLParser):
             if self.ignorenodata:
                 newlinerequired = False
             self.ignorenodata = False
-            if newlinerequired \
-                and len(self.text) > 2 \
-                and self.text[-1] != u'\n' \
-                and self.text[-2] != u'\n':
+            if newlinerequired:
+                if tag_thats_done in [u'dt', u'dd', u'li'] \
+                    and len(self.text) > 1 \
+                    and self.text[-1] != u'\n':
+                        self.text = self.text + u'\n'
+                elif len(self.text) > 2 \
+                    and self.text[-1] != u'\n' \
+                    and self.text[-2] != u'\n':
                     self.text = self.text + u'\n\n'
 
         if tag_thats_done in ["h1", "h2", "h3", "h4", "h5", "h6"]:
