@@ -235,8 +235,7 @@ class HTML2Text(HTMLParser):
         if tag_thats_done in ["h1", "h2", "h3", "h4", "h5", "h6"]:
             underline = u''
             underlinechar = u'='
-            headingtext = unicode( \
-                self.curdata.encode("utf-8").strip(), "utf-8")
+            headingtext = self.curdata
             seperator = u'\n' + u' '*self.indentlevel
             headingtext = seperator.join( \
                 textwrap.wrap( \
@@ -257,7 +256,7 @@ class HTML2Text(HTMLParser):
                 underline = u' ' * self.indentlevel \
                     + underlinechar * len(headingtext)
             self.text = self.text \
-                + headingtext.encode("utf-8") + u'\n' \
+                + headingtext + u'\n' \
                 + underline
         elif tag_thats_done in [u'p', u'div']:
             paragraph = unicode( \
@@ -414,7 +413,7 @@ class HTML2Text(HTMLParser):
     def handle_data(self, data):
         if len(self.opentags) == 0:
             self.opentags.append(u'p')
-        self.curdata = self.curdata + unicode(data, "utf-8")
+        self.curdata = self.curdata + data.decode("utf-8")
 
     def handle_entityref(self, name):
         entity = name
