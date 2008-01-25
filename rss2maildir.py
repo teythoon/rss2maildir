@@ -151,7 +151,7 @@ class HTML2Text(HTMLParser):
             elif tag_name == u'a':
                 for attr in attrs:
                     if attr[0].lower() == u'href':
-                        self.urls.append(attr[1])
+                        self.urls.append(attr[1].decode('utf-8'))
                 self.curdata = self.curdata + u'`'
                 self.opentags.append(tag_name)
                 return
