@@ -235,7 +235,7 @@ class HTML2Text(HTMLParser):
         if tag_thats_done in ["h1", "h2", "h3", "h4", "h5", "h6"]:
             underline = u''
             underlinechar = u'='
-            headingtext = self.curdata
+            headingtext = " ".join(self.curdata.split())
             seperator = u'\n' + u' '*self.indentlevel
             headingtext = seperator.join( \
                 textwrap.wrap( \
@@ -260,7 +260,8 @@ class HTML2Text(HTMLParser):
                 + underline
         elif tag_thats_done in [u'p', u'div']:
             paragraph = unicode( \
-                self.curdata.strip().encode("utf-8"), "utf-8")
+                " ".join(self.curdata.strip().encode("utf-8").split()), \
+                "utf-8")
             seperator = u'\n' + u' ' * self.indentlevel
             self.text = self.text \
                 + u' ' * self.indentlevel \
@@ -269,10 +270,11 @@ class HTML2Text(HTMLParser):
                         paragraph, self.textwidth - self.indentlevel))
         elif tag_thats_done == "pre":
             self.text = self.text + unicode( \
-                self.curdata.encode("utf-8"), "utf-8")
+                " ".join(self.curdata.encode("utf-8").split()), "utf-8")
         elif tag_thats_done == u'blockquote':
             quote = unicode( \
-                self.curdata.encode("utf-8").strip(), "utf-8")
+                " ".join(self.curdata.encode("utf-8").strip().split()), \
+                "utf-8")
             seperator = u'\n' + u' ' * self.indentlevel + u'> '
             if len(self.text) > 0 and self.text[-1] != u'\n':
                 self.text = self.text + u'\n'
@@ -324,7 +326,9 @@ class HTML2Text(HTMLParser):
                 )
             self.curdata = u''
         elif tag_thats_done == u'dt':
-            definition = unicode(self.curdata.encode("utf-8").strip(), "utf-8")
+            definition = unicode(" ".join( \
+                    self.curdata.encode("utf-8").strip().split()), \
+                "utf-8")
             if len(self.text) > 0 and self.text[-1] != u'\n':
                 self.text = self.text + u'\n\n'
             elif len(self.text) > 1 and self.text[-2] != u'\n':
@@ -337,7 +341,9 @@ class HTML2Text(HTMLParser):
                         self.textwidth - self.indentlevel - 1))
             self.curdata = u''
         elif tag_thats_done == u'dd':
-            definition = unicode(self.curdata.encode("utf-8").strip(), "utf-8")
+            definition = unicode(" ".join( \
+                    self.curdata.encode("utf-8").strip().split()),
+                "utf-8")
             if len(definition) > 0:
                 if len(self.text) > 0 and self.text[-1] != u'\n':
                     self.text = self.text + u'\n'
