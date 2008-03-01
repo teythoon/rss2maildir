@@ -99,6 +99,7 @@ class HTML2Text(HTMLParser):
         self.ignorenodata = False
         self.listcount = []
         self.urls = []
+        self.images = {}
         HTMLParser.__init__(self)
 
     def handle_starttag(self, tag, attrs):
@@ -187,16 +188,31 @@ class HTML2Text(HTMLParser):
             elif attr[0] == 'src':
                 url = attr[1].decode('utf-8')
         if url:
-            self.curdata = self.curdata \
-                + u' [img:' \
-                + url
             if alt:
-                self.curdata = self.curdata \
-                    + u'(' \
-                    + alt \
-                    + u')'
-            self.curdata = self.curdata \
-                + u']'
+                if self.images.has_key(alt):
+                    if self.images[alt]["url"] == url:
+                        self.curdata = self.curdata \
+                            + u'|%s|' %(alt,)
+                    else:
+                        while self.images.has_key(alt):
+                            alt = alt + "_"
+                        self.images[alt]["url"] = url
+                        self.curdata = self.curdata \
+                            + u'|%s|' %(alt,)
+                else:
+                    self.images[alt] = {}
+                    self.images[alt]["url"] = url
+                    self.curdata = self.curdata \
+                        + u'|%s|' %(alt,)
+            else:
+                if self.images.has_key(url):
+                    self.curdata = self.curdata \
+                        + u'|%s|' %(url,)
+                else:
+                    self.images[url] = {}
+                    self.images[url]["url"] =url
+                    self.curdata = self.curdata \
+                        + u'|%s|' %(url,)
 
     def handle_curdata(self):
 
@@ -444,6 +460,12 @@ class HTML2Text(HTMLParser):
         if len(self.urls) > 0:
             self.text = self.text + u'\n__ ' + u'\n__ '.join(self.urls) + u'\n'
             self.urls = []
+        if len(self.images.keys()) > 0:
+            self.text = self.text + u'\n.. ' \
+                + u'.. '.join( \
+                    ["|%s| image:: %s" %(a, self.images[a]["url"]) \
+                for a in self.images.keys()]) + u'\n'
+            self.images = {}
         return self.text
 
 def open_url(method, url):

@@ -1,0 +1,6 @@
+This just tests a simple image
+==============================
+
+Images are a fundamental item, innit. |:)|
+
+.. |:)| image:: http://www.example.com/smilie.jpg
