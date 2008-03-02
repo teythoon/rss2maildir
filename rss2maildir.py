@@ -286,7 +286,7 @@ class HTML2Text(HTMLParser):
                         paragraph, self.textwidth - self.indentlevel))
         elif tag_thats_done == "pre":
             self.text = self.text + unicode( \
-                " ".join(self.curdata.encode("utf-8").split()), "utf-8")
+                self.curdata.encode("utf-8"), "utf-8")
         elif tag_thats_done == u'blockquote':
             quote = unicode( \
                 " ".join(self.curdata.encode("utf-8").strip().split()), \
