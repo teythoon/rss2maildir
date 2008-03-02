@@ -5,15 +5,16 @@
         * We should have at least one silly long line to check that
           wrapping works like we expect otherwise what's the point
 
-   What is HTML2Text?::
+What is HTML2Text?::
 
-   HTML2Text is a funky bit of python that translates HTML fragments
-   in to plain text in a human readable format. It's primary use was
-   for generating the plain text body of email messages generated from
-   rssfeeds as part of rss2maildir.
+    HTML2Text is a funky bit of python that translates HTML fragments
+    in to plain text in a human readable format. It's primary use was
+    for generating the plain text body of email messages generated
+    from rssfeeds as part of rss2maildir.
 
-   Hopefully one day it'll be good enough that other people will want
-   to use it!
+    Hopefully one day it'll be good enough that other people will want
+    to use it!
 
-   Who wrote it?::
-       HTML2Text was written by Brett Parker.
+Who wrote it?::
+
+    HTML2Text was written by Brett Parker.

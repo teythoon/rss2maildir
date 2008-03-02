@@ -1,6 +1,8 @@
 An item::
+
     It's definition
 
 Another item::
+
     And it's got a much longer definition because we like to make sure
     that we've got the test wrapping right don't we.

@@ -197,6 +197,9 @@ class HTML2Text(HTMLParser):
                 self.listcount.append(1)
                 self.listlevel = len(self.listcount) - 1
 
+            if tag_name == u'dl':
+                self.indentlevel = self.indentlevel + 4
+
             if tag_name in self.liststarttags:
                 smallist = self.opentags[-3:-1]
                 smallist.reverse()
@@ -430,12 +433,12 @@ class HTML2Text(HTMLParser):
                 self.text = self.text + u'\n\n'
             elif len(self.text) > 1 and self.text[-2] != u'\n':
                 self.text = self.text + u'\n'
-            definition = u' ' * self.indentlevel + definition + "::"
-            indentstring = u'\n' + u' ' * (self.indentlevel + 1)
+            definition = u' ' * (self.indentlevel - 4) + definition + "::"
+            indentstring = u'\n' + u' ' * (self.indentlevel - 3)
             self.text = self.text \
                 + indentstring.join(
                     textwrap.wrap(definition, \
-                        self.textwidth - self.indentlevel - 1))
+                        self.textwidth - self.indentlevel - 4))
             self.curdata = u''
         elif tag_thats_done == u'dd':
             definition = unicode(" ".join( \
@@ -444,13 +447,13 @@ class HTML2Text(HTMLParser):
             if len(definition) > 0:
                 if len(self.text) > 0 and self.text[-1] != u'\n':
                     self.text = self.text + u'\n'
-                indentstring = u'\n' + u' ' * (self.indentlevel + 4)
+                indentstring = u'\n' + u' ' * self.indentlevel
                 self.text = self.text \
-                    + u' ' * (self.indentlevel + 4) \
+                    + indentstring \
                     + indentstring.join( \
                         textwrap.wrap( \
                             definition, \
-                            self.textwidth - self.indentlevel - 4 \
+                            self.textwidth - self.indentlevel \
                             ) \
                         )
                 self.curdata = u''
@@ -479,8 +482,11 @@ class HTML2Text(HTMLParser):
         if tag in [u'br', u'img']:
             return
 
+        if tag == u'dl':
+            self.indentlevel = self.indentlevel - 4
+
         if tag in self.liststarttags:
-            if tag in [u'ol', u'dl', u'ul']:
+            if tag in [u'ol', u'dl', u'ul', u'dd']:
                 self.handle_curdata()
                 # find if there was a previous list level
                 smalllist = self.opentags[:-1]
