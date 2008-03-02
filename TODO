@@ -1,6 +1,5 @@
 * check that state_dir is writable
-* normalise the number of spaces in formatted text
-* parse the subject/from/to lines and replace entities
-* add references to images
+* parse the from/to lines and replace entities
 * add OPML support
 * table support (this is where it's going to get confusing!)
+* fix dl handling for nested lists
