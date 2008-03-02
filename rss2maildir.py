@@ -520,14 +520,15 @@ class HTML2Text(HTMLParser):
 
     def handle_entityref(self, name):
         entity = name
-        if HTML2Text.entities.has_key(name.lower()):
-            entity = HTML2Text.entities[name.lower()]
+        if HTML2Text.entities.has_key(name):
+            entity = HTML2Text.entities[name]
         elif name[0] == "#":
             entity = unichr(int(name[1:]))
         else:
             entity = "&" + name + ";"
 
-        self.curdata = self.curdata + unicode(entity, "utf-8")
+        self.curdata = self.curdata + unicode(entity.encode('utf-8'), \
+            "utf-8")
 
     def gettext(self):
         self.handle_curdata()
@@ -682,7 +683,9 @@ def parse_and_deliver(maildir, url, statedir):
         except:
             pass
         msg.add_header("Date", createddate)
-        msg.add_header("Subject", item["title"])
+        subj_gen = HTML2Text()
+        subj_gen.feed(item["title"].encod("utf-8"))
+        msg.add_header("Subject", subj_gen.gettext())
         msg.set_default_type("text/plain")
 
         htmlcontent = content.encode("utf-8")

@@ -18,8 +18,8 @@ class ParsingTest(unittest.TestCase):
             except:
                 self.assert_(False)
         input_path = os.path.sep.join(os.path.dirname(os.path.realpath(__file__)).split(os.path.sep)[0:-1])
-        input = open(os.path.join(input_path, "html", filename + ".html")).read()
-        expectedoutput = open(os.path.join(input_path, "expected", filename + ".txt")).read()
+        input = unicode(open(os.path.join(input_path, "html", filename + ".html")).read(), 'utf-8')
+        expectedoutput = unicode(open(os.path.join(input_path, "expected", filename + ".txt")).read(), 'utf-8')
         parser = HTML2Text()
         parser.feed(input)
         output = parser.gettext()
