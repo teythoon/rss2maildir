@@ -550,7 +550,7 @@ class HTML2Text(HTMLParser):
             self.urls = []
         if len(self.images.keys()) > 0:
             self.text = self.text + u'\n.. ' \
-                + u'.. '.join( \
+                + u'\n.. '.join( \
                     ["|%s| image:: %s" %(a, self.images[a]["url"]) \
                 for a in self.images.keys()]) + u'\n'
             self.images = {}
