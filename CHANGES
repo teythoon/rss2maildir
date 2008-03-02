@@ -1,7 +1,121 @@
 2007-12-19
 ----------
 
-* Initial starting points, config parser and option parsers
-* Creation of directories for maildir usage
-* Initial creation of file per message (no collision detection or use of the
-  state directory yet)
+    * Initial starting points, config parser and option parsers
+    * Creation of directories for maildir usage
+    * Initial creation of file per message (no collision detection or use of
+      the state directory yet)
+
+2007-12-20
+----------
+
+    * blockquote support
+    * headings support
+    * pre support
+    * added documentation
+    * change db key to be unique per feed + link url
+    * add rudimentary entity support
+    * paragraph wrapping
+    * message id header
+    * add both text/plain and text/html parts
+
+2007-12-21
+----------
+
+    * fix typo for a particular entity
+    * Add a prelimanary todo list
+    * be slightly more forgiving on connection resets
+    * if there's no date in the feed, use todays date/time
+    * Only download feeds that have changed (or that don't give us enough data
+      to workout if they've changed without downloading it all anyways)
+    * updated posts are now "threaded" - adds a References header with the
+      previous message-id in it, then adds the previous message id to the
+      current message-id so that further updates can reference that properly
+    * improve handling of unicode data
+    * add unordered list support
+    * tidy paragraph handling code to work better
+    * improved entity handling
+
+2007-12-22
+----------
+
+    * Update TODO list with further escaping needs
+    * Add item url to html parts
+    * Add item url to bottom of text only part
+    * multiple posts with the same link but different guid support - still
+      threaded, but don't keep delivering the same messages everytime until
+      they leave the feed
+    * Add redirect support
+
+2007-12-24
+----------
+
+    * Add unittest for unordered list
+    * make sure that the string that we use for plain text always ends in a new
+      line character
+
+2007-12-31
+----------
+
+    * Move some of the list handling above the paragraph handling so that it
+      doesn't get confused (bless it!)
+    * Make expected output match actual output, unittest now passes
+    * Add unit test for some of the badly formed lists that we get after the
+      feedparser "sanitizer" has a word with the HTML (currently fails)
+
+2008-01-05
+----------
+
+    * serious reworking of the HTML2Text parser
+    * fix README to have a more complete config example
+    * stop text width from being hardcoded
+    * add missing source files for unit tests
+    * small fix to paragraph handling
+    * add (first draft of) full test suite runner
+    * add test for well formed paragraph handling
+    * update UnorderedListTests to have better test naming scheme
+    * add suite function to UnorderedListTests
+
+2008-01-06
+----------
+
+    * Serious reworking of HTML2Text to handle nested lists reasonably
+    * unittests improvements
+
+2008-01-07
+----------
+    * Update list handling code to deal with nested lists better and badly
+      formed html
+
+2008-01-10
+----------
+
+    * Handle unicode data more effectively.
+    * beginning of link support in HTML2Text
+
+2008-01-12
+----------
+
+    * Change all entity refs in to unicode strings
+    * Update <br> handling to be more effective
+    * Ignore unknown tags and just pretend they're part of the flow
+    * Add <img> support (very basic!)
+
+2008-01-13
+----------
+
+    * Fix bad check on state directory
+    * Begin fixes to list handling code
+    * Small Unicode fix for img tags.
+
+2008-03-01
+----------
+
+    * change images to ReST format
+    * Normalise spaces where they should be.
+
+2008-03-02
+----------
+
+    * fix ReST image support
+    * add lots of entities
