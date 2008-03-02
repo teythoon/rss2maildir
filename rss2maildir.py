@@ -684,7 +684,7 @@ def parse_and_deliver(maildir, url, statedir):
             pass
         msg.add_header("Date", createddate)
         subj_gen = HTML2Text()
-        subj_gen.feed(item["title"].encod("utf-8"))
+        subj_gen.feed(item["title"].encode("utf-8"))
         msg.add_header("Subject", subj_gen.gettext())
         msg.set_default_type("text/plain")
 
