@@ -313,12 +313,11 @@ class HTML2Text(HTMLParser):
                     else:
                         while self.images.has_key(alt):
                             alt = alt + "_"
-                        self.images[alt]["url"] = url
+                        self.images[alt] = {"url": url}
                         self.curdata = self.curdata \
                             + u'|%s|' %(alt,)
                 else:
-                    self.images[alt] = {}
-                    self.images[alt]["url"] = url
+                    self.images[alt] = {"url": url}
                     self.curdata = self.curdata \
                         + u'|%s|' %(alt,)
             else:
