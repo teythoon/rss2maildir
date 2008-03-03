@@ -11,7 +11,7 @@ class EntityTests(ParsingTests.ParsingTest):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(SpacingTests("testEntities"))
+    suite.addTest(EntityTests("testEntities"))
     return suite
 
 if __name__ == "__main__":

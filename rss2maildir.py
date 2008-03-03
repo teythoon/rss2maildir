@@ -556,12 +556,15 @@ class HTML2Text(HTMLParser):
             self.opentags.append(u'p')
         self.curdata = self.curdata + data.decode("utf-8")
 
+    def handle_charref(self, name):
+        entity = unichr(int(name))
+        self.curdata = self.curdata + unicode(entity.encode('utf-8'), \
+            "utf-8")
+
     def handle_entityref(self, name):
         entity = name
         if HTML2Text.entities.has_key(name):
             entity = HTML2Text.entities[name]
-        elif name[0] == "#":
-            entity = unichr(int(name[1:]))
         else:
             entity = "&" + name + ";"
 
