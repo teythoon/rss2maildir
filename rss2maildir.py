@@ -407,7 +407,7 @@ class HTML2Text(HTMLParser):
             quote = unicode( \
                 " ".join(self.curdata.encode("utf-8").strip().split()), \
                 "utf-8")
-            seperator = u'\n' + u' ' * self.indentlevel + u'> '
+            seperator = u'\n' + u' ' * self.indentlevel + u'    '
             if len(self.text) > 0 and self.text[-1] != u'\n':
                 self.text = self.text + u'\n'
             self.text = self.text \
