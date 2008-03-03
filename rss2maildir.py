@@ -188,7 +188,7 @@ class HTML2Text(HTMLParser):
         u'dt',
         u'dd',
         u'div',
-        #u'blockquote',
+        u'blockquote',
         ]
 
     liststarttags = [
@@ -411,7 +411,7 @@ class HTML2Text(HTMLParser):
             if len(self.text) > 0 and self.text[-1] != u'\n':
                 self.text = self.text + u'\n'
             self.text = self.text \
-                + u'> ' \
+                + u'    ' \
                 + seperator.join( \
                     textwrap.wrap( \
                         quote, \
