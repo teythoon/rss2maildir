@@ -559,7 +559,16 @@ class HTML2Text(HTMLParser):
         self.curdata = self.curdata + data.decode("utf-8")
 
     def handle_charref(self, name):
-        entity = unichr(int(name))
+        try:
+            entity = unichr(int(name))
+        except:
+            if entity[0] == 'x':
+                try:
+                    entity = unichr(int('0%s' %(name,), 16))
+                except:
+                    entity = u'#%s' %(name,)
+            else:
+                entity = u'#%s' %(name,)
         self.curdata = self.curdata + unicode(entity.encode('utf-8'), \
             "utf-8")
 
