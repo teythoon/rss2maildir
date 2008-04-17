@@ -562,7 +562,7 @@ class HTML2Text(HTMLParser):
         try:
             entity = unichr(int(name))
         except:
-            if entity[0] == 'x':
+            if name[0] == 'x':
                 try:
                     entity = unichr(int('0%s' %(name,), 16))
                 except:
@@ -683,7 +683,7 @@ def parse_and_deliver(maildir, url, statedir):
         if item.has_key("content"):
             content = item["content"][0]["value"]
         else:
-            content = item["summary"]
+            content = item["description"]
 
         md5sum = md5.md5(content.encode("utf-8")).hexdigest()
 
