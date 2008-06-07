@@ -683,7 +683,10 @@ def parse_and_deliver(maildir, url, statedir):
         if item.has_key("content"):
             content = item["content"][0]["value"]
         else:
-            content = item["description"]
+            if item.has_key("description"):
+                content = item["description"]
+            else:
+                content = u''
 
         md5sum = md5.md5(content.encode("utf-8")).hexdigest()
 
