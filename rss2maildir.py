@@ -739,10 +739,10 @@ def parse_and_deliver(maildir, url, statedir):
             pass
         msg.add_header("Date", createddate)
         subj_gen = HTML2Text()
-        title = item["title"].encode("utf-8")
+        title = item["title"]
         title = re.sub(u'<', u'&lt;', title)
         title = re.sub(u'>', u'&gt;', title)
-        subj_gen.feed(title)
+        subj_gen.feed(title.encode("utf-8"))
         msg.add_header("Subject", subj_gen.gettext())
         msg.set_default_type("text/plain")
 
