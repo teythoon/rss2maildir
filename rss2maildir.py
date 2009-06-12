@@ -692,17 +692,20 @@ def parse_and_deliver(maildir, url, statedir):
 
         prevmessageid = None
 
+        db_guid_key = (url + u'|' + item["guid"]).encode("utf-8")
+        db_link_key = (url + u'|' + item["link"]).encode("utf-8")
+
         # check if there's a guid too - if that exists and we match the md5,
         # return
         if item.has_key("guid"):
-            if db.has_key(url + "|" + item["guid"]):
-                data = db[url + "|" + item["guid"]]
+            if db.has_key(db_guid_key):
+                data = db[db_guid_key]
                 data = cgi.parse_qs(data)
                 if data["contentmd5"][0] == md5sum:
                     continue
 
-        if db.has_key(url + "|" + item["link"]):
-            data = db[url + "|" + item["link"]]
+        if db.has_key(db_link_key):
+            data = db[db_link_key]
             data = cgi.parse_qs(data)
             if data.has_key("message-id"):
                 prevmessageid = data["message-id"][0]
@@ -790,25 +793,25 @@ def parse_and_deliver(maildir, url, statedir):
                 ("created", createddate), \
                 ("contentmd5", md5sum) \
                 ))
-            db[url + "|" + item["guid"]] = data
+            db[db_guid_key] = data
             try:
-                data = db[url + "|" + item["link"]]
+                data = db[db_link_key]
                 data = cgi.parse_qs(data)
                 newdata = urllib.urlencode(( \
                     ("message-id", messageid), \
                     ("created", data["created"][0]), \
                     ("contentmd5", data["contentmd5"][0]) \
                     ))
-                db[url + "|" + item["link"]] = newdata
+                db[db_link_key] = newdata
             except:
-                db[url + "|" + item["link"]] = data
+                db[db_link_key] = data
         else:
             data = urllib.urlencode(( \
                 ("message-id", messageid), \
                 ("created", createddate), \
                 ("contentmd5", md5sum) \
                 ))
-            db[url + "|" + item["link"]] = data
+            db[db_link_key] = data
 
     if headers:
         data = []
