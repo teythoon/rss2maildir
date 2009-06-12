@@ -692,12 +692,13 @@ def parse_and_deliver(maildir, url, statedir):
 
         prevmessageid = None
 
-        db_guid_key = (url + u'|' + item["guid"]).encode("utf-8")
+        db_guid_key = None
         db_link_key = (url + u'|' + item["link"]).encode("utf-8")
 
         # check if there's a guid too - if that exists and we match the md5,
         # return
         if item.has_key("guid"):
+            db_guid_key = (url + u'|' + item["guid"]).encode("utf-8")
             if db.has_key(db_guid_key):
                 data = db[db_guid_key]
                 data = cgi.parse_qs(data)
