@@ -743,7 +743,7 @@ def parse_and_deliver(maildir, url, statedir):
             pass
         msg.add_header("Date", createddate)
         msg.add_header("X-rss2maildir-rundate", datetime.datetime.now() \
-            .strftime("%a, %e %b %Y %T -0000")
+            .strftime("%a, %e %b %Y %T -0000"))
         subj_gen = HTML2Text()
         title = item["title"]
         title = re.sub(u'<', u'&lt;', title)
