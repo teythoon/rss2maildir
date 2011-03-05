@@ -39,7 +39,11 @@ from optparse import OptionParser
 from ConfigParser import SafeConfigParser
 
 from base64 import b64encode
-import md5
+
+if sys.version_info[0] == 2 and sys.version_info[1] >= 6:
+    import hashlib as md5
+else:
+    import md5
 
 import cgi
 import dbm
