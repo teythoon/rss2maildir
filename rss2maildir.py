@@ -612,10 +612,17 @@ def open_url(method, url):
         (type, rest) = urllib.splittype(url)
         (host, path) = urllib.splithost(rest)
         (host, port) = urllib.splitport(host)
-        if port == None:
+        if type == "https":
+            if port == None:
+                port = 443
+        elif port == None:
             port = 80
         try:
-            conn = httplib.HTTPConnection("%s:%s" %(host, port))
+            conn = None
+            if type == "http":
+                conn = httplib.HTTPConnection("%s:%s" %(host, port))
+            else:
+                conn = httplib.HTTPSConnection("%s:%s" %(host, port))
             conn.request(method, path)
             response = conn.getresponse()
             if response.status in [301, 302, 303, 307]:
