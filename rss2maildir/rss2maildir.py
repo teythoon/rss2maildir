@@ -840,7 +840,7 @@ def parse_and_deliver(maildir, url, statedir):
     db.close()
     feeddb.close()
 
-if __name__ == "__main__":
+def main():
     # This only gets executed if we really called the program
     # first off, parse the command line arguments
 
