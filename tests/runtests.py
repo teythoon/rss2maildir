@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import sys
 import unittest
 import os
 
@@ -7,6 +8,8 @@ basedir = os.path.realpath(os.path.dirname(__file__))
 unittestsdir = os.path.join( \
     basedir, \
     "unittests")
+
+sys.path.insert(0, os.path.join(basedir, '..'))
 
 unittestmodules = []
 
