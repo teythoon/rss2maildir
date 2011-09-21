@@ -4,20 +4,93 @@
 # rss2maildir.py - RSS feeds to Maildir 1 email per item
 # Copyright (C) 2007  Brett Parker <iDunno@sommitrealweird.co.uk>
 # Copyright (C) 2011  Justus Winter <4winter@informatik.uni-hamburg.de>
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from rss2maildir.rss2maildir import main
+import sys
+import os
+from optparse import OptionParser
+from ConfigParser import SafeConfigParser
 
-main()
+from rss2maildir.rss2maildir import main
+from rss2maildir.utils import mkdir_p
+
+oparser = OptionParser()
+oparser.add_option(
+    '-c', '--conf', dest = 'conf',
+    help = 'location of config file'
+)
+oparser.add_option(
+    '-s', '--statedir', dest = 'statedir',
+    help = 'location of directory to store state in'
+)
+
+options, args = oparser.parse_args()
+
+# check for the configfile
+
+configfile = None
+configfile_locations = [
+    os.path.join(os.environ.get('XDG_CONFIG_HOME',
+                                os.path.expanduser('~/.config')),
+                 'rss2maildir', 'config'),
+    os.path.expanduser('~/.rss2maildir.conf'),
+    '/etc/rss2maildir.conf',
+]
+
+if options.conf != None:
+    if not os.path.exists(options.conf):
+        sys.exit('Config file %s does not exist. Exiting.' % options.conf)
+    configfile_locations.insert(0, options.conf)
+
+config = None
+for configfile in configfile_locations:
+    if os.path.exists(configfile):
+        config = SafeConfigParser()
+        config.read(configfile)
+        break
+
+if config == None:
+    sys.exit('No config file found')
+
+state_dir = os.path.join(os.environ.get('XDG_DATA_HOME',
+                                        os.path.expanduser('~/.local/share')),
+                         'rss2maildir')
+
+if options.statedir != None:
+    state_dir = options.statedir
+elif config.has_option('general', 'state_dir'):
+    state_dir = config.get('general', 'state_dir')
+
+try:
+    mkdir_p(state_dir)
+except OSError as e:
+    sys.exit("Couldn't create statedir %s: %s" % (state_dir, str(e)))
+
+maildir_root = 'RSSMaildir'
+if config.has_option('general', 'maildir_root'):
+    maildir_root = config.get('general', 'maildir_root')
+
+try:
+    mkdir_p(maildir_root)
+except OSError as e:
+    sys.exit("Couldn't create Maildir Root %s: %s" % (maildir_root, str(e)))
+
+feeds = config.sections()
+try:
+    feeds.remove('general')
+except ValueError as e:
+    pass
+
+main(feeds, maildir_root, state_dir, options, config)

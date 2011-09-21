@@ -1,19 +1,18 @@
-#!/usr/bin/python
 # coding=utf-8
 
 # rss2maildir.py - RSS feeds to Maildir 1 email per item
 # Copyright (C) 2007  Brett Parker <iDunno@sommitrealweird.co.uk>
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -33,9 +32,6 @@ import random
 import string
 
 import socket
-
-from optparse import OptionParser
-from ConfigParser import SafeConfigParser
 
 from base64 import b64encode
 
@@ -285,136 +281,12 @@ def parse_and_deliver(maildir, url, statedir):
     db.close()
     feeddb.close()
 
-def main():
-    # This only gets executed if we really called the program
-    # first off, parse the command line arguments
-
-    oparser = OptionParser()
-    oparser.add_option(
-        "-c", "--conf", dest="conf",
-        help="location of config file"
-        )
-    oparser.add_option(
-        "-s", "--statedir", dest="statedir",
-        help="location of directory to store state in"
-        )
-
-    (options, args) = oparser.parse_args()
-
-    # check for the configfile
-
-    configfile = None
-
-    if options.conf != None:
-        # does the file exist?
-        try:
-            os.stat(options.conf)
-            configfile = options.conf
-        except:
-            # should exit here as the specified file doesn't exist
-            sys.stderr.write( \
-                "Config file %s does not exist. Exiting.\n" %(options.conf,))
-            sys.exit(2)
-    else:
-        # check through the default locations
-        try:
-            os.stat("%s/.rss2maildir.conf" %(os.environ["HOME"],))
-            configfile = "%s/.rss2maildir.conf" %(os.environ["HOME"],)
-        except:
-            try:
-                os.stat("/etc/rss2maildir.conf")
-                configfile = "/etc/rss2maildir.conf"
-            except:
-                sys.stderr.write("No config file found. Exiting.\n")
-                sys.exit(2)
-
-    # Right - if we've got this far, we've got a config file, now for the hard
-    # bits...
-
-    scp = SafeConfigParser()
-    scp.read(configfile)
-
-    maildir_root = "RSSMaildir"
-    state_dir = "state"
-
-    if options.statedir != None:
-        state_dir = options.statedir
-        try:
-            mode = os.stat(state_dir)[stat.ST_MODE]
-            if not stat.S_ISDIR(mode):
-                sys.stderr.write( \
-                    "State directory (%s) is not a directory\n" %(state_dir))
-                sys.exit(1)
-        except:
-            # try to make the directory
-            try:
-                os.mkdir(state_dir)
-            except:
-                sys.stderr.write("Couldn't create statedir %s" %(state_dir))
-                sys.exit(1)
-    elif scp.has_option("general", "state_dir"):
-        new_state_dir = scp.get("general", "state_dir")
-        try:
-            mode = os.stat(new_state_dir)[stat.ST_MODE]
-            if not stat.S_ISDIR(mode):
-                sys.stderr.write( \
-                    "State directory (%s) is not a directory\n" %(state_dir))
-                sys.exit(1)
-            else:
-                state_dir = new_state_dir
-        except:
-            # try to create it
-            try:
-                os.mkdir(new_state_dir)
-                state_dir = new_state_dir
-            except:
-                sys.stderr.write( \
-                    "Couldn't create state directory %s\n" %(new_state_dir))
-                sys.exit(1)
-    else:
-        try:
-            mode = os.stat(state_dir)[stat.ST_MODE]
-            if not stat.S_ISDIR(mode):
-                sys.stderr.write( \
-                    "State directory %s is not a directory\n" %(state_dir))
-                sys.exit(1)
-        except:
-            try:
-                os.mkdir(state_dir)
-            except:
-                sys.stderr.write( \
-                    "State directory %s could not be created\n" %(state_dir))
-                sys.exit(1)
-
-    if scp.has_option("general", "maildir_root"):
-        maildir_root = scp.get("general", "maildir_root")
-
-    try:
-        mode = os.stat(maildir_root)[stat.ST_MODE]
-        if not stat.S_ISDIR(mode):
-            sys.stderr.write( \
-                "Maildir Root %s is not a directory\n" \
-                %(maildir_root))
-            sys.exit(1)
-    except:
-        try:
-            os.mkdir(maildir_root)
-        except:
-            sys.stderr.write("Couldn't create Maildir Root %s\n" \
-                %(maildir_root))
-            sys.exit(1)
-
-    feeds = scp.sections()
-    try:
-        feeds.remove("general")
-    except:
-        pass
-
+def main(feeds, maildir_root, state_dir, options, config):
     for section in feeds:
         # check if the directory exists
         maildir = None
         try:
-            maildir = scp.get(section, "maildir")
+            maildir = config.get(section, "maildir")
         except:
             maildir = section
 
