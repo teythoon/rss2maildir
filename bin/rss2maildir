@@ -26,6 +26,7 @@ from ConfigParser import SafeConfigParser
 
 from rss2maildir.rss2maildir import main
 from rss2maildir.utils import mkdir_p
+from rss2maildir.Database import Database
 
 oparser = OptionParser()
 oparser.add_option(
@@ -89,6 +90,7 @@ try:
     mkdir_p(state_dir)
 except OSError as e:
     sys.exit("Couldn't create statedir %s: %s" % (state_dir, str(e)))
+database = Database(state_dir)
 
 maildir_root = 'RSSMaildir'
 if config.has_option('general', 'maildir_root'):
@@ -105,4 +107,4 @@ try:
 except ValueError as e:
     pass
 
-main(feeds, maildir_root, state_dir, options, config)
+main(feeds, maildir_root, database, options, config)

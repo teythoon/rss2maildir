@@ -41,7 +41,6 @@ else:
     import md5
 
 import cgi
-import dbm
 
 import re
 
@@ -51,12 +50,15 @@ from .utils import make_maildir, open_url
 log = logging.getLogger('rss2maildir')
 
 class NewsItem(object):
-    def parse_and_deliver(self, maildir, url, feed_db, seen_db):
+    def __init__(self, database):
+        self.database = database
+
+    def parse_and_deliver(self, maildir, url):
         feedhandle = None
         headers = None
         # first check if we know about this feed already
-        if feed_db.has_key(url):
-            data = feed_db[url]
+        if self.database.feeds.has_key(url):
+            data = self.database.feeds[url]
             data = cgi.parse_qs(data)
             response = open_url("HEAD", url)
             headers = None
@@ -122,14 +124,14 @@ class NewsItem(object):
             # return
             if item.has_key("guid"):
                 db_guid_key = (url + u'|' + item["guid"]).encode("utf-8")
-                if seen_db.has_key(db_guid_key):
-                    data = seen_db[db_guid_key]
+                if self.database.seen.has_key(db_guid_key):
+                    data = self.database.seen[db_guid_key]
                     data = cgi.parse_qs(data)
                     if data["contentmd5"][0] == md5sum:
                         continue
 
-            if seen_db.has_key(db_link_key):
-                data = seen_db[db_link_key]
+            if self.database.seen.has_key(db_link_key):
+                data = self.database.seen[db_link_key]
                 data = cgi.parse_qs(data)
                 if data.has_key("message-id"):
                     prevmessageid = data["message-id"][0]
@@ -219,25 +221,25 @@ class NewsItem(object):
                     ("created", createddate), \
                     ("contentmd5", md5sum) \
                     ))
-                seen_db[db_guid_key] = data
+                self.database.seen[db_guid_key] = data
                 try:
-                    data = seen_db[db_link_key]
+                    data = self.database.seen[db_link_key]
                     data = cgi.parse_qs(data)
                     newdata = urllib.urlencode(( \
                         ("message-id", messageid), \
                         ("created", data["created"][0]), \
                         ("contentmd5", data["contentmd5"][0]) \
                         ))
-                    seen_db[db_link_key] = newdata
+                    self.database.seen[db_link_key] = newdata
                 except:
-                    seen_db[db_link_key] = data
+                    self.database.seen[db_link_key] = data
             else:
                 data = urllib.urlencode(( \
                     ("message-id", messageid), \
                     ("created", createddate), \
                     ("contentmd5", md5sum) \
                     ))
-                seen_db[db_link_key] = data
+                self.database.seen[db_link_key] = data
 
         if headers:
             data = []
@@ -247,12 +249,9 @@ class NewsItem(object):
                     data.append((header[0], header[1]))
             if len(data) > 0:
                 data = urllib.urlencode(data)
-                feed_db[url] = data
+                self.database.feeds[url] = data
 
-def main(feeds, maildir_root, state_dir, options, config):
-    feed_db = dbm.open(os.path.join(state_dir, "feeds"), "c")
-    seen_db = dbm.open(os.path.join(state_dir, "seen"), "c")
-
+def main(feeds, maildir_root, database, options, config):
     if config.has_option('general', 'maildir_template'):
         maildir_template = config.get('general', 'maildir_template')
     else:
@@ -281,7 +280,4 @@ def main(feeds, maildir_root, state_dir, options, config):
         # right - we've got the directories, we've got the section, we know the
         # url... lets play!
 
-        NewsItem().parse_and_deliver(maildir, section, feed_db, seen_db)
-
-    seen_db.close()
-    feed_db.close()
+        NewsItem(database).parse_and_deliver(maildir, section)
