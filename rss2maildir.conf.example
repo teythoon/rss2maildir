@@ -1,6 +1,11 @@
 [general]
 maildir_root = RSSMaildir
 
+# This is used to generate the target for feeds that do not explicitly
+# set the maildir option. '{}' is replaced by the feeds name if it
+# has been specified or the urlencoded feed URL.
+maildir_template = .feeds.{}
+
 [http://www.sommitrealweird.co.uk/blog/?flav=atom]
 name = Brett Parker
 email = iDunno@sommitrealweird.co.uk
@@ -11,7 +16,7 @@ name = Planet Alug
 email = main@lists.alug.org.uk
 maildir = alug
 
+# This will end up in RSSMaildir/.feeds.Planet Debian
 [http://planet.debian.org/rss10.xml]
 name = Planet Debian
 email = debian-users@lists.debian.org
-maildir = debian

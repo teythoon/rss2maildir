@@ -252,16 +252,23 @@ def main(feeds, maildir_root, state_dir, options, config):
     feed_db = dbm.open(os.path.join(state_dir, "feeds"), "c")
     seen_db = dbm.open(os.path.join(state_dir, "seen"), "c")
 
-    for section in feeds:
-        # check if the directory exists
-        maildir = None
-        try:
-            maildir = config.get(section, "maildir")
-        except:
-            maildir = section
+    if config.has_option('general', 'maildir_template'):
+        maildir_template = config.get('general', 'maildir_template')
+    else:
+        maildir_template = '{}'
 
-        maildir = urllib.urlencode(((section, maildir),)).split("=")[1]
-        maildir = os.path.join(maildir_root, maildir)
+    for section in feeds:
+        if config.has_option(section, 'name'):
+            name = config.get(section, 'name')
+        else:
+            name = urllib.urlencode((('', section), )).split("=")[1]
+
+        if config.has_option(section, 'maildir'):
+            relative_maildir = config.get(section, 'maildir')
+        else:
+            relative_maildir = maildir_template.replace('{}', name)
+
+        maildir = os.path.join(maildir_root, relative_maildir)
 
         try:
             make_maildir(maildir)
