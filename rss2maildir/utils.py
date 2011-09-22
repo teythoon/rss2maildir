@@ -20,8 +20,12 @@
 
 import os
 import errno
+import socket
 import urllib
 import httplib
+import logging
+
+log = logging.getLogger('rss2maildir')
 
 def mkdir_p(path):
     try:
@@ -48,22 +52,24 @@ def open_url(method, url):
                 port = 443
         elif port == None:
             port = 80
+
         try:
-            conn = None
             if type_ == "http":
                 conn = httplib.HTTPConnection("%s:%s" %(host, port))
             else:
                 conn = httplib.HTTPSConnection("%s:%s" %(host, port))
             conn.request(method, path)
-            response = conn.getresponse()
-            if response.status in [301, 302, 303, 307]:
-                headers = response.getheaders()
-                for header in headers:
-                    if header[0] == "location":
-                        url = header[1]
-            elif response.status == 200:
-                return response
-        except:
-            pass
+        except (httplib.HTTPException, socket.error) as e:
+            log.warning('http request %s %s failed: %s' % (method, url, str(e)))
+            return None
+
+        response = conn.getresponse()
+        if response.status in [301, 302, 303, 307]:
+            headers = response.getheaders()
+            for header in headers:
+                if header[0] == "location":
+                    url = header[1]
+        elif response.status == 200:
+            return response
         redirectcount = redirectcount + 1
     return None
