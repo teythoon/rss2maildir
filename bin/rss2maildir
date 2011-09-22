@@ -20,6 +20,7 @@
 
 import sys
 import os
+import logging
 from optparse import OptionParser
 from ConfigParser import SafeConfigParser
 
@@ -35,8 +36,19 @@ oparser.add_option(
     '-s', '--statedir', dest = 'statedir',
     help = 'location of directory to store state in'
 )
+oparser.add_option(
+    '-v', '--verbose', dest = 'verbosity', action = 'count',
+    help = 'be more verbose, can be given multiple times'
+)
 
 options, args = oparser.parse_args()
+
+loglevel = {
+    0: logging.WARNING,
+    1: logging.INFO,
+    2: logging.DEBUG,
+}[min(2, options.verbosity)]
+logging.basicConfig(level = loglevel)
 
 # check for the configfile
 
