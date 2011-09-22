@@ -25,8 +25,6 @@ import urllib
 import httplib
 import logging
 
-log = logging.getLogger('rss2maildir')
-
 def mkdir_p(path):
     try:
         os.makedirs(path)
@@ -41,12 +39,15 @@ def make_maildir(path):
                     for subdir in ('cur', 'tmp', 'new')):
         mkdir_p(dirname)
 
-def open_url(method, url):
+def open_url(method, url, max_redirects = 3, redirect_on_status = (301, 302, 303, 307)):
+    log = logging.getLogger('%s %s' % (method, url))
+
     redirectcount = 0
-    while redirectcount < 3:
+    while redirectcount < max_redirects:
         (type_, rest) = urllib.splittype(url)
         (host, path) = urllib.splithost(rest)
         (host, port) = urllib.splitport(host)
+
         if type_ == "https":
             if port == None:
                 port = 443
@@ -60,16 +61,22 @@ def open_url(method, url):
                 conn = httplib.HTTPSConnection("%s:%s" %(host, port))
             conn.request(method, path)
         except (httplib.HTTPException, socket.error) as e:
-            log.warning('http request %s %s failed: %s' % (method, url, str(e)))
+            log.warning('http request failed: %s' % str(e))
             return None
 
         response = conn.getresponse()
-        if response.status in [301, 302, 303, 307]:
+        if response.status == 200:
+            return response
+        elif response.status in redirect_on_status:
             headers = response.getheaders()
             for header in headers:
                 if header[0] == "location":
                     url = header[1]
-        elif response.status == 200:
-            return response
+        else:
+            log.warning('Received unexpected status: %i %s' % (response.status, response.reason))
+            return None
+
         redirectcount = redirectcount + 1
+
+    log.warning('Maximum number of redirections reached')
     return None
