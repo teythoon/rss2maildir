@@ -38,7 +38,7 @@ oparser.add_option(
     help = 'location of directory to store state in'
 )
 oparser.add_option(
-    '-v', '--verbose', dest = 'verbosity', action = 'count',
+    '-v', '--verbose', dest = 'verbosity', action = 'count', default = 0,
     help = 'be more verbose, can be given multiple times'
 )
 
