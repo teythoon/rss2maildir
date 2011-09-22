@@ -19,7 +19,6 @@
 import sys
 import os
 import stat
-import httplib
 import logging
 import urllib
 
@@ -47,40 +46,9 @@ import dbm
 import re
 
 from .HTML2Text import HTML2Text
-from .utils import make_maildir
+from .utils import make_maildir, open_url
 
 log = logging.getLogger('rss2maildir')
-
-def open_url(method, url):
-    redirectcount = 0
-    while redirectcount < 3:
-        (type, rest) = urllib.splittype(url)
-        (host, path) = urllib.splithost(rest)
-        (host, port) = urllib.splitport(host)
-        if type == "https":
-            if port == None:
-                port = 443
-        elif port == None:
-            port = 80
-        try:
-            conn = None
-            if type == "http":
-                conn = httplib.HTTPConnection("%s:%s" %(host, port))
-            else:
-                conn = httplib.HTTPSConnection("%s:%s" %(host, port))
-            conn.request(method, path)
-            response = conn.getresponse()
-            if response.status in [301, 302, 303, 307]:
-                headers = response.getheaders()
-                for header in headers:
-                    if header[0] == "location":
-                        url = header[1]
-            elif response.status == 200:
-                return response
-        except:
-            pass
-        redirectcount = redirectcount + 1
-    return None
 
 def parse_and_deliver(maildir, url, feed_db, seen_db):
     feedhandle = None
