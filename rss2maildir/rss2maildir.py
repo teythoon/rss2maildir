@@ -82,13 +82,12 @@ def open_url(method, url):
         redirectcount = redirectcount + 1
     return None
 
-def parse_and_deliver(maildir, url, statedir):
+def parse_and_deliver(maildir, url, feed_db, seen_db):
     feedhandle = None
     headers = None
     # first check if we know about this feed already
-    feeddb = dbm.open(os.path.join(statedir, "feeds"), "c")
-    if feeddb.has_key(url):
-        data = feeddb[url]
+    if feed_db.has_key(url):
+        data = feed_db[url]
         data = cgi.parse_qs(data)
         response = open_url("HEAD", url)
         headers = None
@@ -131,7 +130,6 @@ def parse_and_deliver(maildir, url, statedir):
             return
 
     fp = feedparser.parse(feedhandle)
-    db = dbm.open(os.path.join(statedir, "seen"), "c")
     for item in fp["items"]:
         # have we seen it before?
         # need to work out what the content is first...
@@ -155,14 +153,14 @@ def parse_and_deliver(maildir, url, statedir):
         # return
         if item.has_key("guid"):
             db_guid_key = (url + u'|' + item["guid"]).encode("utf-8")
-            if db.has_key(db_guid_key):
-                data = db[db_guid_key]
+            if seen_db.has_key(db_guid_key):
+                data = seen_db[db_guid_key]
                 data = cgi.parse_qs(data)
                 if data["contentmd5"][0] == md5sum:
                     continue
 
-        if db.has_key(db_link_key):
-            data = db[db_link_key]
+        if seen_db.has_key(db_link_key):
+            data = seen_db[db_link_key]
             data = cgi.parse_qs(data)
             if data.has_key("message-id"):
                 prevmessageid = data["message-id"][0]
@@ -252,25 +250,25 @@ def parse_and_deliver(maildir, url, statedir):
                 ("created", createddate), \
                 ("contentmd5", md5sum) \
                 ))
-            db[db_guid_key] = data
+            seen_db[db_guid_key] = data
             try:
-                data = db[db_link_key]
+                data = seen_db[db_link_key]
                 data = cgi.parse_qs(data)
                 newdata = urllib.urlencode(( \
                     ("message-id", messageid), \
                     ("created", data["created"][0]), \
                     ("contentmd5", data["contentmd5"][0]) \
                     ))
-                db[db_link_key] = newdata
+                seen_db[db_link_key] = newdata
             except:
-                db[db_link_key] = data
+                seen_db[db_link_key] = data
         else:
             data = urllib.urlencode(( \
                 ("message-id", messageid), \
                 ("created", createddate), \
                 ("contentmd5", md5sum) \
                 ))
-            db[db_link_key] = data
+            seen_db[db_link_key] = data
 
     if headers:
         data = []
@@ -280,12 +278,12 @@ def parse_and_deliver(maildir, url, statedir):
                 data.append((header[0], header[1]))
         if len(data) > 0:
             data = urllib.urlencode(data)
-            feeddb[url] = data
-
-    db.close()
-    feeddb.close()
+            feed_db[url] = data
 
 def main(feeds, maildir_root, state_dir, options, config):
+    feed_db = dbm.open(os.path.join(state_dir, "feeds"), "c")
+    seen_db = dbm.open(os.path.join(state_dir, "seen"), "c")
+
     for section in feeds:
         # check if the directory exists
         maildir = None
@@ -307,4 +305,7 @@ def main(feeds, maildir_root, state_dir, options, config):
         # right - we've got the directories, we've got the section, we know the
         # url... lets play!
 
-        parse_and_deliver(maildir, section, state_dir)
+        parse_and_deliver(maildir, section, feed_db, seen_db)
+
+    seen_db.close()
+    feed_db.close()
