@@ -40,17 +40,17 @@ def make_maildir(path):
 def open_url(method, url):
     redirectcount = 0
     while redirectcount < 3:
-        (type, rest) = urllib.splittype(url)
+        (type_, rest) = urllib.splittype(url)
         (host, path) = urllib.splithost(rest)
         (host, port) = urllib.splitport(host)
-        if type == "https":
+        if type_ == "https":
             if port == None:
                 port = 443
         elif port == None:
             port = 80
         try:
             conn = None
-            if type == "http":
+            if type_ == "http":
                 conn = httplib.HTTPConnection("%s:%s" %(host, port))
             else:
                 conn = httplib.HTTPSConnection("%s:%s" %(host, port))
