@@ -27,3 +27,8 @@ def mkdir_p(path):
             pass
         else:
             raise
+
+def make_maildir(path):
+    for dirname in (os.path.join(path, subdir)
+                    for subdir in ('cur', 'tmp', 'new')):
+        mkdir_p(dirname)
