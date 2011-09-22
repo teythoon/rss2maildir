@@ -20,6 +20,7 @@ import sys
 import os
 import stat
 import httplib
+import logging
 import urllib
 
 import feedparser
@@ -46,6 +47,9 @@ import dbm
 import re
 
 from .HTML2Text import HTML2Text
+from .utils import make_maildir
+
+log = logging.getLogger('rss2maildir')
 
 def open_url(method, url):
     redirectcount = 0
@@ -294,45 +298,11 @@ def main(feeds, maildir_root, state_dir, options, config):
         maildir = os.path.join(maildir_root, maildir)
 
         try:
-            exists = os.stat(maildir)
-            if stat.S_ISDIR(exists[stat.ST_MODE]):
-                # check if there's a new, cur and tmp directory
-                try:
-                    mode = os.stat(os.path.join(maildir, "cur"))[stat.ST_MODE]
-                except:
-                    os.mkdir(os.path.join(maildir, "cur"))
-                    if not stat.S_ISDIR(mode):
-                        sys.stderr.write("Broken maildir: %s\n" %(maildir))
-                try:
-                    mode = os.stat(os.path.join(maildir, "tmp"))[stat.ST_MODE]
-                except:
-                    os.mkdir(os.path.join(maildir, "tmp"))
-                    if not stat.S_ISDIR(mode):
-                        sys.stderr.write("Broken maildir: %s\n" %(maildir))
-                try:
-                    mode = os.stat(os.path.join(maildir, "new"))[stat.ST_MODE]
-                    if not stat.S_ISDIR(mode):
-                        sys.stderr.write("Broken maildir: %s\n" %(maildir))
-                except:
-                    os.mkdir(os.path.join(maildir, "new"))
-            else:
-                sys.stderr.write("Broken maildir: %s\n" %(maildir))
-        except:
-            try:
-                os.mkdir(maildir)
-            except:
-                sys.stderr.write("Couldn't create root maildir %s\n" \
-                    %(maildir))
-                sys.exit(1)
-            try:
-                os.mkdir(os.path.join(maildir, "new"))
-                os.mkdir(os.path.join(maildir, "cur"))
-                os.mkdir(os.path.join(maildir, "tmp"))
-            except:
-                sys.stderr.write( \
-                    "Couldn't create required maildir directories for %s\n" \
-                    %(section,))
-                sys.exit(1)
+            make_maildir(maildir)
+        except OSError as e:
+            log.warning('Could not create maildir %s: %s' % (maildir, str(e)))
+            log.warning('Skipping feed %s' % section)
+            continue
 
         # right - we've got the directories, we've got the section, we know the
         # url... lets play!
