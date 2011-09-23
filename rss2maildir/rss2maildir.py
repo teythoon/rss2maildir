@@ -16,66 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 import os
-import re
-import stat
 import urllib
 import logging
-import feedparser
 
-from .Item import Item
-from .utils import make_maildir, open_url, generate_random_string
+from .Feed import Feed
+from .utils import make_maildir
 
 log = logging.getLogger('rss2maildir')
-
-class Feed(object):
-    def __init__(self, database, url):
-        self.database = database
-        self.url = url
-        self.name = url
-
-    def is_changed(self):
-        try:
-            previous_data = self.database.deserialize(self.database.feeds[self.url])
-        except KeyError as e:
-            return True
-
-        response = open_url("HEAD", self.url)
-        if not response:
-            log.warning('Fetching feed %s failed' % self.name)
-            return True
-
-        result = False
-        for key, value in response.getheaders():
-            if previous_data.get(key, None) != value:
-                result = True
-                break
-
-        return result
-
-    relevant_headers = ("content-md5", "etag", "last-modified", "content-length")
-    def parse_and_deliver(self, maildir):
-        if not self.is_changed():
-            return
-
-        response = open_url("GET", self.url)
-        if not response:
-            log.warning('Fetching feed %s failed' % (self.url))
-            return
-
-        parsed_feed = feedparser.parse(response)
-        for item in (Item(self, feed_item) for feed_item in parsed_feed["items"]):
-            if self.database.seen_before(item):
-                continue
-
-            message = item.create_message()
-            item.deliver(message, maildir)
-            self.database.mark_seen(item)
-
-        data = dict((key, value) for key, value in response.getheaders() if key in self.relevant_headers)
-        if data:
-            self.database.set_feed_metadata(self.url, data)
 
 def main(feeds, maildir_root, database, options, config):
     if config.has_option('general', 'maildir_template'):
