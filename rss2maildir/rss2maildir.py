@@ -45,7 +45,7 @@ import cgi
 import re
 
 from .HTML2Text import HTML2Text
-from .utils import make_maildir, open_url
+from .utils import make_maildir, open_url, generate_random_string
 
 log = logging.getLogger('rss2maildir')
 
@@ -89,7 +89,7 @@ class Item(object):
         self.previous_message_id = None
         self.message_id = '<%s.%s@%s>' % (
             datetime.datetime.now().strftime("%Y%m%d%H%M"),
-            ''.join(random.choice(string.ascii_letters + string.digits) for n in range(6)),
+            generate_random_string(6),
             socket.gethostname()
         )
 
@@ -158,6 +158,26 @@ class Item(object):
     def html_content(self):
         return self.content
 
+    def deliver(self, message, maildir):
+        # start by working out the filename we should be writting to, we do
+        # this following the normal maildir style rules
+        file_name = '%i.%s.%s.%s' % (
+            os.getpid(),
+            socket.gethostname(),
+            generate_random_string(10),
+            datetime.datetime.now().strftime('%s')
+        )
+
+        tmp_path = os.path.join(maildir, 'tmp', file_name)
+        handle = open(tmp_path, 'w')
+        handle.write(message.as_string())
+        handle.close()
+
+        # now move it in to the new directory
+        new_path = os.path.join(maildir, 'new', file_name)
+        os.link(tmp_path, new_path)
+        os.unlink(tmp_path)
+
 class Feed(object):
     def __init__(self, database, url):
         self.database = database
@@ -201,25 +221,7 @@ class Feed(object):
                 continue
 
             message = item.create_message()
-
-            # start by working out the filename we should be writting to, we do
-            # this following the normal maildir style rules
-            fname = str(os.getpid()) \
-                + "." + socket.gethostname() \
-                + "." + "".join( \
-                    [random.choice( \
-                        string.ascii_letters + string.digits \
-                        ) for a in range(0,10) \
-                    ]) + "." \
-                + datetime.datetime.now().strftime('%s')
-            fn = os.path.join(maildir, "tmp", fname)
-            fh = open(fn, "w")
-            fh.write(message.as_string())
-            fh.close()
-            # now move it in to the new directory
-            newfn = os.path.join(maildir, "new", fname)
-            os.link(fn, newfn)
-            os.unlink(fn)
+            item.deliver(message, maildir)
 
             # now add to the database about the item
             if item.previous_message_id:
