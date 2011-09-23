@@ -145,12 +145,6 @@ class Feed(object):
 
         fp = feedparser.parse(feedhandle)
         for item in (Item(self, feed_item) for feed_item in fp["items"]):
-            # have we seen it before?
-            # need to work out what the content is first...
-
-            # check if there's a guid too - if that exists and we match the md5,
-            # return
-
             if item.seen_before():
                 continue
 
