@@ -49,8 +49,62 @@ from .utils import make_maildir, open_url
 
 log = logging.getLogger('rss2maildir')
 
+serialize = urllib.urlencode
+deserialize = lambda data: dict((key, value[0]) for key, value in cgi.parse_qs(data).items())
+
 class Item(object):
-    pass
+    def __init__(self, feed, feed_item):
+        self.feed = feed
+
+        self.author = feed_item.get('author', self.feed.url)
+        self.title = feed_item['title']
+        self.link = feed_item['link']
+
+        if feed_item.has_key('content'):
+            self.content = feed_item['content'][0]['value']
+        else:
+            if feed_item.has_key('description'):
+                self.content = feed_item['description']
+            else:
+                self.content = u''
+
+        self.md5sum = md5.md5(self.content.encode('utf-8')).hexdigest()
+        self.prevmessageid = None
+
+        self.guid = feed_item.get('guid', None)
+        if self.guid:
+            self.db_guid_key = (self.feed.url + u'|' + self.guid).encode('utf-8')
+        else:
+            self.db_guid_key = None
+
+        self.db_link_key = (self.feed.url + u'|' + feed_item['link']).encode('utf-8')
+
+        self.createddate = datetime.datetime.now().strftime('%a, %e %b %Y %T -0000')
+        updated_parsed = feed_item['updated_parsed'][0:6]
+        try:
+            self.createddate = datetime.datetime(*updated_parsed) \
+                .strftime('%a, %e %b %Y %T -0000')
+        except TypeError as e:
+            log.warning('Parsing date %s failed: %s' % (updated_parsed, str(e)))
+
+
+    def seen_before(self):
+        if self.db_guid_key:
+            if self.feed.database.seen.has_key(self.db_guid_key):
+                data = deserialize(self.feed.database.seen[self.db_guid_key])
+                if data['contentmd5'] == self.md5sum:
+                    return True
+
+        if self.feed.database.seen.has_key(self.db_link_key):
+            data = deserialize(self.feed.database.seen[self.db_link_key])
+
+            if data.has_key('message-id'):
+                self.prevmessageid = data['message-id']
+
+            if data['contentmd5'] == self.md5sum:
+                return True
+
+        return False
 
 class Feed(object):
     def __init__(self, database, url):
@@ -90,47 +144,15 @@ class Feed(object):
         feedhandle = response
 
         fp = feedparser.parse(feedhandle)
-        for item in fp["items"]:
+        for item in (Item(self, feed_item) for feed_item in fp["items"]):
             # have we seen it before?
             # need to work out what the content is first...
 
-            if item.has_key("content"):
-                content = item["content"][0]["value"]
-            else:
-                if item.has_key("description"):
-                    content = item["description"]
-                else:
-                    content = u''
-
-            md5sum = md5.md5(content.encode("utf-8")).hexdigest()
-
-            prevmessageid = None
-
-            db_guid_key = None
-            db_link_key = (self.url + u'|' + item["link"]).encode("utf-8")
-
             # check if there's a guid too - if that exists and we match the md5,
             # return
-            if item.has_key("guid"):
-                db_guid_key = (self.url + u'|' + item["guid"]).encode("utf-8")
-                if self.database.seen.has_key(db_guid_key):
-                    data = self.database.seen[db_guid_key]
-                    data = cgi.parse_qs(data)
-                    if data["contentmd5"][0] == md5sum:
-                        continue
 
-            if self.database.seen.has_key(db_link_key):
-                data = self.database.seen[db_link_key]
-                data = cgi.parse_qs(data)
-                if data.has_key("message-id"):
-                    prevmessageid = data["message-id"][0]
-                if data["contentmd5"][0] == md5sum:
-                    continue
-
-            try:
-                author = item["author"]
-            except:
-                author = self.url
+            if item.seen_before():
+                continue
 
             # create a basic email message
             msg = MIMEMultipart("alternative")
@@ -144,40 +166,32 @@ class Feed(object):
                     ]) + "@" + socket.gethostname() + ">"
             msg.add_header("Message-ID", messageid)
             msg.set_unixfrom("\"%s\" <rss2maildir@localhost>" %(self.url))
-            msg.add_header("From", "\"%s\" <rss2maildir@localhost>" %(author))
+            msg.add_header("From", "\"%s\" <rss2maildir@localhost>" % (item.author))
             msg.add_header("To", "\"%s\" <rss2maildir@localhost>" %(self.url))
-            if prevmessageid:
-                msg.add_header("References", prevmessageid)
-            createddate = datetime.datetime.now() \
-                .strftime("%a, %e %b %Y %T -0000")
-            try:
-                createddate = datetime.datetime(*item["updated_parsed"][0:6]) \
-                    .strftime("%a, %e %b %Y %T -0000")
-            except:
-                pass
-            msg.add_header("Date", createddate)
+            if item.prevmessageid:
+                msg.add_header("References", item.prevmessageid)
+            msg.add_header("Date", item.createddate)
             msg.add_header("X-rss2maildir-rundate", datetime.datetime.now() \
                 .strftime("%a, %e %b %Y %T -0000"))
             subj_gen = HTML2Text()
-            title = item["title"]
-            title = re.sub(u'<', u'&lt;', title)
-            title = re.sub(u'>', u'&gt;', title)
+
+            title = item.title.replace(u'<', u'&lt;').replace(u'>', u'&gt;')
             subj_gen.feed(title.encode("utf-8"))
             msg.add_header("Subject", subj_gen.gettext())
             msg.set_default_type("text/plain")
 
-            htmlcontent = content.encode("utf-8")
-            htmlcontent = "%s\n\n<p>Item URL: <a href='%s'>%s</a></p>" %( \
-                content, \
-                item["link"], \
-                item["link"] )
+            htmlcontent = "%s\n\n<p>Item URL: <a href='%s'>%s</a></p>" % (
+                item.content,
+                item.link,
+                item.link
+            )
             htmlpart = MIMEText(htmlcontent.encode("utf-8"), "html", "utf-8")
             textparser = HTML2Text()
-            textparser.feed(content.encode("utf-8"))
-            textcontent = textparser.gettext()
-            textcontent = "%s\n\nItem URL: %s" %( \
-                textcontent, \
-                item["link"] )
+            textparser.feed(item.content.encode("utf-8"))
+            textcontent = "%s\n\nItem URL: %s" % (
+                textparser.gettext(),
+                item.link
+            )
             textpart = MIMEText(textcontent.encode("utf-8"), "plain", "utf-8")
             msg.attach(textpart)
             msg.attach(htmlpart)
@@ -202,33 +216,29 @@ class Feed(object):
             os.unlink(fn)
 
             # now add to the database about the item
-            if prevmessageid:
+            if item.prevmessageid:
                 messageid = prevmessageid + " " + messageid
-            if item.has_key("guid") and item["guid"] != item["link"]:
-                data = urllib.urlencode(( \
-                    ("message-id", messageid), \
-                    ("created", createddate), \
-                    ("contentmd5", md5sum) \
-                    ))
-                self.database.seen[db_guid_key] = data
+
+            data = serialize({
+                'message-id': messageid,
+                'created': item.createddate,
+                'contentmd5': item.md5sum
+            })
+
+            if item.guid and item.guid != item.link:
+                self.database.seen[item.db_guid_key] = data
                 try:
-                    data = self.database.seen[db_link_key]
-                    data = cgi.parse_qs(data)
-                    newdata = urllib.urlencode(( \
-                        ("message-id", messageid), \
-                        ("created", data["created"][0]), \
-                        ("contentmd5", data["contentmd5"][0]) \
-                        ))
-                    self.database.seen[db_link_key] = newdata
+                    previous_data = deserialize(self.database.seen[item.db_link_key])
+                    newdata = serialize({
+                        'message-id': messageid,
+                        'created': previous_data['created'],
+                        'contentmd5': previous_data['contentmd5']
+                    })
+                    self.database.seen[item.db_link_key] = newdata
                 except:
-                    self.database.seen[db_link_key] = data
+                    self.database.seen[item.db_link_key] = data
             else:
-                data = urllib.urlencode(( \
-                    ("message-id", messageid), \
-                    ("created", createddate), \
-                    ("contentmd5", md5sum) \
-                    ))
-                self.database.seen[db_link_key] = data
+                self.database.seen[item.db_link_key] = data
 
         if headers:
             data = []
