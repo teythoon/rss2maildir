@@ -167,12 +167,12 @@ class Feed(object):
         if not self.database.feeds.has_key(self.url):
             return True
 
-        previous_data = cgi.parse_qs(self.database.feeds[self.url])
-
         response = open_url("HEAD", self.url)
         if not response:
             log.warning('Fetching feed %s failed' % self.name)
             return True
+
+        previous_data = self.database.deserialize(self.database.feeds[self.url])
 
         result = False
         for key, value in response.getheaders():
@@ -204,14 +204,10 @@ class Feed(object):
             self.database.mark_seen(item)
 
         if headers:
-            data = []
-            for header in headers:
-                if header[0] in \
-                    ["content-md5", "etag", "last-modified", "content-length"]:
-                    data.append((header[0], header[1]))
-            if len(data) > 0:
-                data = urllib.urlencode(data)
-                self.database.feeds[self.url] = data
+            relevant_headers = ("content-md5", "etag", "last-modified", "content-length")
+            data = dict((key, value) for key, value in headers if key in relevant_headers)
+            if data:
+                self.database.feeds[self.url] = self.database.serialize(data)
 
 def main(feeds, maildir_root, database, options, config):
     if config.has_option('general', 'maildir_template'):
