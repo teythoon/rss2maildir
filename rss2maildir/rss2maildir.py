@@ -49,56 +49,45 @@ from .utils import make_maildir, open_url
 
 log = logging.getLogger('rss2maildir')
 
-class NewsItem(object):
-    def __init__(self, database):
-        self.database = database
+class Item(object):
+    pass
 
-    def parse_and_deliver(self, maildir, url):
-        feedhandle = None
-        headers = None
-        # first check if we know about this feed already
-        if self.database.feeds.has_key(url):
-            data = self.database.feeds[url]
-            data = cgi.parse_qs(data)
-            response = open_url("HEAD", url)
-            headers = None
-            if response:
-                headers = response.getheaders()
-            ischanged = False
-            try:
-                for header in headers:
-                    if header[0] == "content-length":
-                        if header[1] != data["content-length"][0]:
-                            ischanged = True
-                    elif header[0] == "etag":
-                        if header[1] != data["etag"][0]:
-                            ischanged = True
-                    elif header[0] == "last-modified":
-                        if header[1] != data["last-modified"][0]:
-                            ischanged = True
-                    elif header[0] == "content-md5":
-                        if header[1] != data["content-md5"][0]:
-                            ischanged = True
-            except:
-                ischanged = True
-            if ischanged:
-                response = open_url("GET", url)
-                if response != None:
-                    headers = response.getheaders()
-                    feedhandle = response
-                else:
-                    sys.stderr.write("Failed to fetch feed: %s\n" %(url))
-                    return
-            else:
-                return # don't need to do anything, nothings changed.
-        else:
-            response = open_url("GET", url)
-            if response != None:
-                headers = response.getheaders()
-                feedhandle = response
-            else:
-                sys.stderr.write("Failed to fetch feed: %s\n" %(url))
-                return
+class Feed(object):
+    def __init__(self, database, url):
+        self.database = database
+        self.url = url
+        self.name = url
+
+    def is_changed(self):
+        if not self.database.feeds.has_key(self.url):
+            return True
+
+        previous_data = cgi.parse_qs(self.database.feeds[self.url])
+
+        response = open_url("HEAD", self.url)
+        if not response:
+            log.warning('Fetching feed %s failed' % self.name)
+            return True
+
+        result = False
+        for key, value in response.getheaders():
+            if previous_data.get(key, None) != value:
+                result = True
+                break
+
+        return result
+
+    def parse_and_deliver(self, maildir):
+        if not self.is_changed():
+            return
+
+        response = open_url("GET", self.url)
+        if not response:
+            log.warning('Fetching feed %s failed' % (self.url))
+            return
+
+        headers = response.getheaders()
+        feedhandle = response
 
         fp = feedparser.parse(feedhandle)
         for item in fp["items"]:
@@ -118,12 +107,12 @@ class NewsItem(object):
             prevmessageid = None
 
             db_guid_key = None
-            db_link_key = (url + u'|' + item["link"]).encode("utf-8")
+            db_link_key = (self.url + u'|' + item["link"]).encode("utf-8")
 
             # check if there's a guid too - if that exists and we match the md5,
             # return
             if item.has_key("guid"):
-                db_guid_key = (url + u'|' + item["guid"]).encode("utf-8")
+                db_guid_key = (self.url + u'|' + item["guid"]).encode("utf-8")
                 if self.database.seen.has_key(db_guid_key):
                     data = self.database.seen[db_guid_key]
                     data = cgi.parse_qs(data)
@@ -141,7 +130,7 @@ class NewsItem(object):
             try:
                 author = item["author"]
             except:
-                author = url
+                author = self.url
 
             # create a basic email message
             msg = MIMEMultipart("alternative")
@@ -154,9 +143,9 @@ class NewsItem(object):
                         ) for a in range(0,6) \
                     ]) + "@" + socket.gethostname() + ">"
             msg.add_header("Message-ID", messageid)
-            msg.set_unixfrom("\"%s\" <rss2maildir@localhost>" %(url))
+            msg.set_unixfrom("\"%s\" <rss2maildir@localhost>" %(self.url))
             msg.add_header("From", "\"%s\" <rss2maildir@localhost>" %(author))
-            msg.add_header("To", "\"%s\" <rss2maildir@localhost>" %(url))
+            msg.add_header("To", "\"%s\" <rss2maildir@localhost>" %(self.url))
             if prevmessageid:
                 msg.add_header("References", prevmessageid)
             createddate = datetime.datetime.now() \
@@ -249,7 +238,7 @@ class NewsItem(object):
                     data.append((header[0], header[1]))
             if len(data) > 0:
                 data = urllib.urlencode(data)
-                self.database.feeds[url] = data
+                self.database.feeds[self.url] = data
 
 def main(feeds, maildir_root, database, options, config):
     if config.has_option('general', 'maildir_template'):
@@ -257,14 +246,14 @@ def main(feeds, maildir_root, database, options, config):
     else:
         maildir_template = '{}'
 
-    for section in feeds:
-        if config.has_option(section, 'name'):
-            name = config.get(section, 'name')
+    for url in feeds:
+        if config.has_option(url, 'name'):
+            name = config.get(url, 'name')
         else:
-            name = urllib.urlencode((('', section), )).split("=")[1]
+            name = urllib.urlencode((('', url), )).split("=")[1]
 
-        if config.has_option(section, 'maildir'):
-            relative_maildir = config.get(section, 'maildir')
+        if config.has_option(url, 'maildir'):
+            relative_maildir = config.get(url, 'maildir')
         else:
             relative_maildir = maildir_template.replace('{}', name)
 
@@ -274,10 +263,11 @@ def main(feeds, maildir_root, database, options, config):
             make_maildir(maildir)
         except OSError as e:
             log.warning('Could not create maildir %s: %s' % (maildir, str(e)))
-            log.warning('Skipping feed %s' % section)
+            log.warning('Skipping feed %s' % url)
             continue
 
-        # right - we've got the directories, we've got the section, we know the
+        # right - we've got the directories, we've got the url, we know the
         # url... lets play!
 
-        NewsItem(database).parse_and_deliver(maildir, section)
+        feed = Feed(database, url)
+        feed.parse_and_deliver(maildir)
