@@ -54,6 +54,7 @@ class Feed(object):
     relevant_headers = ('content-md5', 'etag', 'last-modified', 'content-length')
     def parse_and_deliver(self, maildir):
         if not self.is_changed():
+            log.info('Feed %s not changed, skipping' % self.url)
             return
 
         response = open_url('GET', self.url)
@@ -64,6 +65,7 @@ class Feed(object):
         parsed_feed = feedparser.parse(response)
         for item in (Item(self, feed_item) for feed_item in parsed_feed['items']):
             if self.database.seen_before(item):
+                log.info('Item %s already seen, skipping' % item.link)
                 continue
 
             message = item.create_message()
