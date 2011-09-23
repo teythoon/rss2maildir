@@ -40,8 +40,6 @@ if sys.version_info[0] == 2 and sys.version_info[1] >= 6:
 else:
     import md5
 
-import cgi
-
 import re
 
 from .HTML2Text import HTML2Text
@@ -164,15 +162,15 @@ class Feed(object):
         self.name = url
 
     def is_changed(self):
-        if not self.database.feeds.has_key(self.url):
+        try:
+            previous_data = self.database.deserialize(self.database.feeds[self.url])
+        except KeyError as e:
             return True
 
         response = open_url("HEAD", self.url)
         if not response:
             log.warning('Fetching feed %s failed' % self.name)
             return True
-
-        previous_data = self.database.deserialize(self.database.feeds[self.url])
 
         result = False
         for key, value in response.getheaders():
@@ -182,6 +180,7 @@ class Feed(object):
 
         return result
 
+    relevant_headers = ("content-md5", "etag", "last-modified", "content-length")
     def parse_and_deliver(self, maildir):
         if not self.is_changed():
             return
@@ -191,11 +190,8 @@ class Feed(object):
             log.warning('Fetching feed %s failed' % (self.url))
             return
 
-        headers = response.getheaders()
-        feedhandle = response
-
-        fp = feedparser.parse(feedhandle)
-        for item in (Item(self, feed_item) for feed_item in fp["items"]):
+        parsed_feed = feedparser.parse(response)
+        for item in (Item(self, feed_item) for feed_item in parsed_feed["items"]):
             if self.database.seen_before(item):
                 continue
 
@@ -203,11 +199,9 @@ class Feed(object):
             item.deliver(message, maildir)
             self.database.mark_seen(item)
 
-        if headers:
-            relevant_headers = ("content-md5", "etag", "last-modified", "content-length")
-            data = dict((key, value) for key, value in headers if key in relevant_headers)
-            if data:
-                self.database.feeds[self.url] = self.database.serialize(data)
+        data = dict((key, value) for key, value in response.getheaders() if key in self.relevant_headers)
+        if data:
+            self.database.set_feed_metadata(self.url, data)
 
 def main(feeds, maildir_root, database, options, config):
     if config.has_option('general', 'maildir_template'):
