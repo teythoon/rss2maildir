@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import os
 import errno
 import random
@@ -26,6 +27,11 @@ import string
 import urllib
 import httplib
 import logging
+
+if sys.version_info[0] == 2 and sys.version_info[1] >= 6:
+    import hashlib as md5
+else:
+    import md5
 
 def mkdir_p(path):
     try:
@@ -86,3 +92,6 @@ def open_url(method, url, max_redirects = 3, redirect_on_status = (301, 302, 303
 def generate_random_string(length,
                            character_set = string.ascii_letters + string.digits):
     return ''.join(random.choice(character_set) for n in range(length))
+
+def compute_hash(data):
+    return md5.md5(data).hexdigest()
