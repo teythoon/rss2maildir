@@ -49,9 +49,6 @@ from .utils import make_maildir, open_url, generate_random_string
 
 log = logging.getLogger('rss2maildir')
 
-serialize = urllib.urlencode
-deserialize = lambda data: dict((key, value[0]) for key, value in cgi.parse_qs(data).items())
-
 class Item(object):
     def __init__(self, feed, feed_item):
         self.feed = feed
@@ -95,24 +92,6 @@ class Item(object):
 
     def __getitem__(self, key):
         return getattr(self, key)
-
-    def seen_before(self):
-        if self.db_guid_key:
-            if self.feed.database.seen.has_key(self.db_guid_key):
-                data = deserialize(self.feed.database.seen[self.db_guid_key])
-                if data['contentmd5'] == self.md5sum:
-                    return True
-
-        if self.feed.database.seen.has_key(self.db_link_key):
-            data = deserialize(self.feed.database.seen[self.db_link_key])
-
-            if data.has_key('message-id'):
-                self.previous_message_id = data['message-id']
-
-            if data['contentmd5'] == self.md5sum:
-                return True
-
-        return False
 
     text_template = u'%(text_content)s\n\nItem URL: %(link)s'
     html_template = u'%(html_content)s\n<p>Item URL: <a href="%(link)s">%(link)s</a></p>'
@@ -217,7 +196,7 @@ class Feed(object):
 
         fp = feedparser.parse(feedhandle)
         for item in (Item(self, feed_item) for feed_item in fp["items"]):
-            if item.seen_before():
+            if self.database.seen_before(item):
                 continue
 
             message = item.create_message()
@@ -227,7 +206,7 @@ class Feed(object):
             if item.previous_message_id:
                 item.message_id = item.previous_message_id + " " + item.message_id
 
-            data = serialize({
+            data = self.database.serialize({
                 'message-id': item.message_id,
                 'created': item.createddate,
                 'contentmd5': item.md5sum
@@ -236,8 +215,8 @@ class Feed(object):
             if item.guid and item.guid != item.link:
                 self.database.seen[item.db_guid_key] = data
                 try:
-                    previous_data = deserialize(self.database.seen[item.db_link_key])
-                    newdata = serialize({
+                    previous_data = self.database.deserialize(self.database.seen[item.db_link_key])
+                    newdata = self.database.serialize({
                         'message-id': item.message_id,
                         'created': previous_data['created'],
                         'contentmd5': previous_data['contentmd5']

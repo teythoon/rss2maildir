@@ -19,7 +19,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import cgi
 import dbm
+import urllib
 import logging
 
 log = logging.getLogger('database')
@@ -32,3 +34,27 @@ class Database(object):
     def __del__(self):
         self.feeds.close()
         self.seen.close()
+
+    def serialize(self, data):
+        return urllib.urlencode(data)
+
+    def deserialize(self, encoded_data):
+         return dict((key, value[0]) for key, value in cgi.parse_qs(encoded_data).items())
+
+    def seen_before(self, item):
+        if item.db_guid_key:
+            if self.seen.has_key(item.db_guid_key):
+                data = self.deserialize(self.seen[item.db_guid_key])
+                if data['contentmd5'] == item.md5sum:
+                    return True
+
+        if self.seen.has_key(item.db_link_key):
+            data = self.deserialize(self.seen[item.db_link_key])
+
+            if data.has_key('message-id'):
+                item.previous_message_id = data['message-id']
+
+            if data['contentmd5'] == item.md5sum:
+                return True
+
+        return False
