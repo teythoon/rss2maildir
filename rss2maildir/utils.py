@@ -20,7 +20,9 @@
 
 import os
 import errno
+import random
 import socket
+import string
 import urllib
 import httplib
 import logging
@@ -80,3 +82,7 @@ def open_url(method, url, max_redirects = 3, redirect_on_status = (301, 302, 303
 
     log.warning('Maximum number of redirections reached')
     return None
+
+def generate_random_string(length,
+                           character_set = string.ascii_letters + string.digits):
+    return ''.join(random.choice(character_set) for n in range(length))
