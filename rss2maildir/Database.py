@@ -58,3 +58,28 @@ class Database(object):
                 return True
 
         return False
+
+    def mark_seen(self, item):
+        if item.previous_message_id:
+            item.message_id = item.previous_message_id + " " + item.message_id
+
+        data = self.serialize({
+            'message-id': item.message_id,
+            'created': item.createddate,
+            'contentmd5': item.md5sum
+        })
+
+        if item.guid and item.guid != item.link:
+            self.seen[item.db_guid_key] = data
+            try:
+                previous_data = self.deserialize(self.seen[item.db_link_key])
+                newdata = self.serialize({
+                    'message-id': item.message_id,
+                    'created': previous_data['created'],
+                    'contentmd5': previous_data['contentmd5']
+                })
+                self.seen[item.db_link_key] = newdata
+            except:
+                self.seen[item.db_link_key] = data
+        else:
+            self.seen[item.db_link_key] = data

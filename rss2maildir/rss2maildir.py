@@ -201,31 +201,7 @@ class Feed(object):
 
             message = item.create_message()
             item.deliver(message, maildir)
-
-            # now add to the database about the item
-            if item.previous_message_id:
-                item.message_id = item.previous_message_id + " " + item.message_id
-
-            data = self.database.serialize({
-                'message-id': item.message_id,
-                'created': item.createddate,
-                'contentmd5': item.md5sum
-            })
-
-            if item.guid and item.guid != item.link:
-                self.database.seen[item.db_guid_key] = data
-                try:
-                    previous_data = self.database.deserialize(self.database.seen[item.db_link_key])
-                    newdata = self.database.serialize({
-                        'message-id': item.message_id,
-                        'created': previous_data['created'],
-                        'contentmd5': previous_data['contentmd5']
-                    })
-                    self.database.seen[item.db_link_key] = newdata
-                except:
-                    self.database.seen[item.db_link_key] = data
-            else:
-                self.database.seen[item.db_link_key] = data
+            self.database.mark_seen(item)
 
         if headers:
             data = []
