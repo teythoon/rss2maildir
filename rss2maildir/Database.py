@@ -83,3 +83,9 @@ class Database(object):
                 self.seen[item.db_link_key] = data
         else:
             self.seen[item.db_link_key] = data
+
+    def get_feed_metadata(self, url):
+        return self.deserialize(self.feeds[url])
+
+    def set_feed_metadata(self, url, data):
+        self.feeds[url] = self.serialize(data)
