@@ -69,7 +69,6 @@ class Item(object):
                 self.content = u''
 
         self.md5sum = md5.md5(self.content.encode('utf-8')).hexdigest()
-        self.prevmessageid = None
 
         self.guid = feed_item.get('guid', None)
         if self.guid:
@@ -87,6 +86,12 @@ class Item(object):
         except TypeError as e:
             log.warning('Parsing date %s failed: %s' % (updated_parsed, str(e)))
 
+        self.previous_message_id = None
+        self.message_id = '<%s.%s@%s>' % (
+            datetime.datetime.now().strftime("%Y%m%d%H%M"),
+            ''.join(random.choice(string.ascii_letters + string.digits) for n in range(6)),
+            socket.gethostname()
+        )
 
     def seen_before(self):
         if self.db_guid_key:
@@ -99,7 +104,7 @@ class Item(object):
             data = deserialize(self.feed.database.seen[self.db_link_key])
 
             if data.has_key('message-id'):
-                self.prevmessageid = data['message-id']
+                self.previous_message_id = data['message-id']
 
             if data['contentmd5'] == self.md5sum:
                 return True
@@ -150,20 +155,12 @@ class Feed(object):
 
             # create a basic email message
             msg = MIMEMultipart("alternative")
-            messageid = "<" \
-                + datetime.datetime.now().strftime("%Y%m%d%H%M") \
-                + "." \
-                + "".join( \
-                    [random.choice( \
-                        string.ascii_letters + string.digits \
-                        ) for a in range(0,6) \
-                    ]) + "@" + socket.gethostname() + ">"
-            msg.add_header("Message-ID", messageid)
+            msg.add_header("Message-ID", item.message_id)
             msg.set_unixfrom("\"%s\" <rss2maildir@localhost>" %(self.url))
             msg.add_header("From", "\"%s\" <rss2maildir@localhost>" % (item.author))
             msg.add_header("To", "\"%s\" <rss2maildir@localhost>" %(self.url))
-            if item.prevmessageid:
-                msg.add_header("References", item.prevmessageid)
+            if item.previous_message_id:
+                msg.add_header("References", item.previous_message_id)
             msg.add_header("Date", item.createddate)
             msg.add_header("X-rss2maildir-rundate", datetime.datetime.now() \
                 .strftime("%a, %e %b %Y %T -0000"))
@@ -210,11 +207,11 @@ class Feed(object):
             os.unlink(fn)
 
             # now add to the database about the item
-            if item.prevmessageid:
-                messageid = item.prevmessageid + " " + messageid
+            if item.previous_message_id:
+                item.message_id = item.previous_message_id + " " + item.message_id
 
             data = serialize({
-                'message-id': messageid,
+                'message-id': item.message_id,
                 'created': item.createddate,
                 'contentmd5': item.md5sum
             })
@@ -224,7 +221,7 @@ class Feed(object):
                 try:
                     previous_data = deserialize(self.database.seen[item.db_link_key])
                     newdata = serialize({
-                        'message-id': messageid,
+                        'message-id': item.message_id,
                         'created': previous_data['created'],
                         'contentmd5': previous_data['contentmd5']
                     })
