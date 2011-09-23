@@ -20,29 +20,28 @@ import os
 import urllib
 import logging
 
+from .Database import Database
 from .Feed import Feed
+from .Settings import settings
 from .utils import make_maildir
 
 log = logging.getLogger('rss2maildir')
 
-def main(feeds, maildir_root, database, options, config):
-    if config.has_option('general', 'maildir_template'):
-        maildir_template = config.get('general', 'maildir_template')
-    else:
-        maildir_template = '{}'
+def main():
+    database = Database(os.path.expanduser(settings['state_dir']))
 
-    for url in feeds:
-        if config.has_option(url, 'name'):
-            name = config.get(url, 'name')
+    for url in settings.feeds():
+        if settings.has_option(url, 'name'):
+            name = settings.get(url, 'name')
         else:
             name = urllib.urlencode((('', url), )).split("=")[1]
 
-        if config.has_option(url, 'maildir'):
-            relative_maildir = config.get(url, 'maildir')
+        if settings.has_option(url, 'maildir'):
+            relative_maildir = settings.get(url, 'maildir')
         else:
-            relative_maildir = maildir_template.replace('{}', name)
+            relative_maildir = settings.get(url, 'maildir_template').replace('{}', name)
 
-        maildir = os.path.join(maildir_root, relative_maildir)
+        maildir = os.path.join(os.path.expanduser(settings['maildir_root']), relative_maildir)
 
         try:
             make_maildir(maildir)

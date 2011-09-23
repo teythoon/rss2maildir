@@ -24,10 +24,17 @@ import dbm
 import urllib
 import logging
 
+from .utils import mkdir_p
+
 log = logging.getLogger('database')
 
 class Database(object):
     def __init__(self, path):
+        try:
+            mkdir_p(path)
+        except OSError as e:
+            raise RuntimeError("Couldn't create statedir %s: %s" % (settings['state_dir'], str(e)))
+
         self.feeds = dbm.open(os.path.join(path, "feeds"), "c")
         self.seen = dbm.open(os.path.join(path, "seen"), "c")
 
