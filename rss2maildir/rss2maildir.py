@@ -217,7 +217,7 @@ class Feed(object):
 
             # now add to the database about the item
             if item.prevmessageid:
-                messageid = prevmessageid + " " + messageid
+                messageid = item.prevmessageid + " " + messageid
 
             data = serialize({
                 'message-id': messageid,
