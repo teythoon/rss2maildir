@@ -34,7 +34,7 @@ class Feed(object):
 
     def is_changed(self):
         try:
-            previous_data = self.database.deserialize(self.database.feeds[self.url])
+            previous_data = self.database.get_feed_metadata(self.url)
         except KeyError as e:
             return True
 
