@@ -54,4 +54,6 @@ def main():
         # url... lets play!
 
         feed = Feed(database, url)
-        feed.parse_and_deliver(maildir)
+        for item in feed.new_items():
+            message = item.create_message()
+            item.deliver(message, maildir)

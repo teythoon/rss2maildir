@@ -52,7 +52,7 @@ class Feed(object):
         return result
 
     relevant_headers = ('content-md5', 'etag', 'last-modified', 'content-length')
-    def parse_and_deliver(self, maildir):
+    def new_items(self):
         if not self.is_changed():
             log.info('Feed %s not changed, skipping' % self.url)
             return
@@ -68,8 +68,7 @@ class Feed(object):
                 log.info('Item %s already seen, skipping' % item.link)
                 continue
 
-            message = item.create_message()
-            item.deliver(message, maildir)
+            yield item
             self.database.mark_seen(item)
 
         data = dict((key, value) for key, value in response.getheaders() if key in self.relevant_headers)
