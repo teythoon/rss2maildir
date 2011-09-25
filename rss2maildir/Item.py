@@ -82,7 +82,7 @@ class Item(object):
         subj_gen = HTML2Text()
         title = self.title.replace(u'<', u'&lt;').replace(u'>', u'&gt;')
         subj_gen.feed(title.encode('utf-8'))
-        message.add_header('Subject', subj_gen.gettext())
+        message.add_header('Subject', subj_gen.gettext().strip())
 
         message.add_header('Message-ID', self.message_id)
         if self.previous_message_id:
