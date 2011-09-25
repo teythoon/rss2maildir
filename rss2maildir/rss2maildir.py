@@ -55,5 +55,5 @@ def main():
 
         feed = Feed(database, url)
         for item in feed.new_items():
-            message = item.create_message()
+            message = item.create_message(include_html_part = settings.getboolean(feed.url, 'include_html_part'))
             item.deliver(message, maildir)
