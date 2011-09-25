@@ -19,14 +19,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import cgi
 import dbm
-import urllib
 import logging
+import marshal
 
 from .utils import mkdir_p
 
 log = logging.getLogger('database')
+
+serialize = marshal.dumps
+deserialize = marshal.loads
 
 class Database(object):
     def __init__(self, path):
@@ -42,21 +44,15 @@ class Database(object):
         self.feeds.close()
         self.seen.close()
 
-    def serialize(self, data):
-        return urllib.urlencode(data)
-
-    def deserialize(self, encoded_data):
-         return dict((key, value[0]) for key, value in cgi.parse_qs(encoded_data).items())
-
     def seen_before(self, item):
         if item.db_guid_key:
             if self.seen.has_key(item.db_guid_key):
-                data = self.deserialize(self.seen[item.db_guid_key])
+                data = deserialize(self.seen[item.db_guid_key])
                 if data['contentmd5'] == item.md5sum:
                     return True
 
         if self.seen.has_key(item.db_link_key):
-            data = self.deserialize(self.seen[item.db_link_key])
+            data = deserialize(self.seen[item.db_link_key])
 
             if data.has_key('message-id'):
                 item.previous_message_id = data['message-id']
@@ -70,7 +66,7 @@ class Database(object):
         if item.previous_message_id:
             item.message_id = item.previous_message_id + " " + item.message_id
 
-        data = self.serialize({
+        data = serialize({
             'message-id': item.message_id,
             'created': item.createddate,
             'contentmd5': item.md5sum
@@ -79,8 +75,8 @@ class Database(object):
         if item.guid and item.guid != item.link:
             self.seen[item.db_guid_key] = data
             try:
-                previous_data = self.deserialize(self.seen[item.db_link_key])
-                newdata = self.serialize({
+                previous_data = deserialize(self.seen[item.db_link_key])
+                newdata = serialize({
                     'message-id': item.message_id,
                     'created': previous_data['created'],
                     'contentmd5': previous_data['contentmd5']
@@ -92,7 +88,7 @@ class Database(object):
             self.seen[item.db_link_key] = data
 
     def get_feed_metadata(self, url):
-        return self.deserialize(self.feeds[url])
+        return deserialize(self.feeds[url])
 
     def set_feed_metadata(self, url, data):
-        self.feeds[url] = self.serialize(data)
+        self.feeds[url] = serialize(data)
