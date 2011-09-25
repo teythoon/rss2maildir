@@ -67,8 +67,7 @@ if options.conf != None:
 
 found_config = False
 for configfile in configfile_locations:
-    if os.path.exists(configfile):
-        settings.read(configfile)
+    if settings.read(configfile):
         found_config = True
         break
 
