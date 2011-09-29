@@ -2,17 +2,17 @@
 
 # rss2maildir.py - RSS feeds to Maildir 1 email per item
 # Copyright (C) 2007  Brett Parker <iDunno@sommitrealweird.co.uk>
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -20,6 +20,11 @@ import textwrap
 from HTMLParser import HTMLParser
 
 class HTML2Text(HTMLParser):
+    '''
+    HTML2Text parses html fragments to a reStructuredText like
+    representation.
+    '''
+
     entities = {
         u'amp': u'&',
         u'lt': u'<',
@@ -254,7 +259,7 @@ class HTML2Text(HTMLParser):
                 return
             else:
                 # we don't know the tag, so lets avoid handling it!
-                return 
+                return
 
     def handle_startendtag(self, tag, attrs):
         if tag.lower() == u'br':
