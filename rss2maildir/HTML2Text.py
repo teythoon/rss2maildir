@@ -26,160 +26,160 @@ class HTML2Text(HTMLParser):
     '''
 
     entities = {
-        u'amp': u'&',
-        u'lt': u'<',
-        u'gt': u'>',
-        u'pound': u'£',
-        u'copy': u'©',
-        u'apos': u'\'',
-        u'quot': u'"',
-        u'nbsp': u' ',
-        u'ldquo': u'“',
-        u'rdquo': u'”',
-        u'lsquo': u'‘',
-        u'rsquo': u'’',
-        u'laquo': u'«',
-        u'raquo': u'»',
-        u'lsaquo': u'‹',
-        u'rsaquo': u'›',
-        u'bull': u'•',
-        u'middot': u'·',
-        u'deg': u'°',
-        u'helip': u'…',
-        u'trade': u'™',
-        u'reg': u'®',
-        u'agrave': u'à',
-        u'Agrave': u'À',
-        u'egrave': u'è',
-        u'Egrave': u'È',
-        u'igrave': u'ì',
-        u'Igrave': u'Ì',
-        u'ograve': u'ò',
-        u'Ograve': u'Ò',
-        u'ugrave': u'ù',
-        u'Ugrave': u'Ù',
-        u'aacute': u'á',
-        u'Aacute': u'Á',
-        u'eacute': u'é',
-        u'Eacute': u'É',
-        u'iacute': u'í',
-        u'Iacute': u'Í',
-        u'oacute': u'ó',
-        u'Oacute': u'Ó',
-        u'uacute': u'ú',
-        u'Uacute': u'Ú',
-        u'yactue': u'ý',
-        u'Yacute': u'Ý',
-        u'acirc': u'â',
-        u'Acirc': u'Â',
-        u'ecirc': u'ê',
-        u'Ecirc': u'Ê',
-        u'icirc': u'î',
-        u'Icirc': u'Î',
-        u'ocirc': u'ô',
-        u'Ocirc': u'Ô',
-        u'ucirc': u'û',
-        u'Ucirc': u'Û',
-        u'atilde': u'ã',
-        u'Atilde': u'Ã',
-        u'ntilde': u'ñ',
-        u'Ntilde': u'Ñ',
-        u'otilde': u'õ',
-        u'Otilde': u'Õ',
-        u'auml': u'ä',
-        u'Auml': u'Ä',
-        u'euml': u'ë',
-        u'Euml': u'Ë',
-        u'iuml': u'ï',
-        u'Iuml': u'Ï',
-        u'ouml': u'ö',
-        u'Ouml': u'Ö',
-        u'uuml': u'ü',
-        u'Uuml': u'Ü',
-        u'yuml': u'ÿ',
-        u'Yuml': u'Ÿ',
-        u'iexcl': u'¡',
-        u'iquest': u'¿',
-        u'ccedil': u'ç',
-        u'Ccedil': u'Ç',
-        u'oelig': u'œ',
-        u'OElig': u'Œ',
-        u'szlig': u'ß',
-        u'oslash': u'ø',
-        u'Oslash': u'Ø',
-        u'aring': u'å',
-        u'Aring': u'Å',
-        u'aelig': u'æ',
-        u'AElig': u'Æ',
-        u'thorn': u'þ',
-        u'THORN': u'Þ',
-        u'eth': u'ð',
-        u'ETH': u'Ð',
-        u'mdash': u'—',
-        u'ndash': u'–',
-        u'sect': u'§',
-        u'para': u'¶',
-        u'uarr': u'↑',
-        u'darr': u'↓',
-        u'larr': u'←',
-        u'rarr': u'→',
-        u'dagger': u'†',
-        u'Dagger': u'‡',
-        u'permil': u'‰',
-        u'prod': u'∏',
-        u'infin': u'∞',
-        u'radic': u'√',
-        u'there4': u'∴',
-        u'int': u'∫',
-        u'asymp': u'≈',
-        u'ne': u'≠',
-        u'equiv': '≡',
-        u'le': u'≤',
-        u'ge': u'≥',
-        u'loz': u'⋄',
-        u'sum': u'∑',
-        u'part': u'∂',
-        u'prime': u'′',
-        u'Prime': u'″',
-        u'harr': u'↔',
-        u'micro': u'µ',
-        u'not': u'¬',
-        u'plusmn': u'±',
-        u'divide': u'÷',
-        u'cent': u'¢',
-        u'euro': u'€',
+        'amp': u'&',
+        'lt': u'<',
+        'gt': u'>',
+        'pound': u'£',
+        'copy': u'©',
+        'apos': u'\'',
+        'quot': u'"',
+        'nbsp': u' ',
+        'ldquo': u'“',
+        'rdquo': u'”',
+        'lsquo': u'‘',
+        'rsquo': u'’',
+        'laquo': u'«',
+        'raquo': u'»',
+        'lsaquo': u'‹',
+        'rsaquo': u'›',
+        'bull': u'•',
+        'middot': u'·',
+        'deg': u'°',
+        'helip': u'…',
+        'trade': u'™',
+        'reg': u'®',
+        'agrave': u'à',
+        'Agrave': u'À',
+        'egrave': u'è',
+        'Egrave': u'È',
+        'igrave': u'ì',
+        'Igrave': u'Ì',
+        'ograve': u'ò',
+        'Ograve': u'Ò',
+        'ugrave': u'ù',
+        'Ugrave': u'Ù',
+        'aacute': u'á',
+        'Aacute': u'Á',
+        'eacute': u'é',
+        'Eacute': u'É',
+        'iacute': u'í',
+        'Iacute': u'Í',
+        'oacute': u'ó',
+        'Oacute': u'Ó',
+        'uacute': u'ú',
+        'Uacute': u'Ú',
+        'yactue': u'ý',
+        'Yacute': u'Ý',
+        'acirc': u'â',
+        'Acirc': u'Â',
+        'ecirc': u'ê',
+        'Ecirc': u'Ê',
+        'icirc': u'î',
+        'Icirc': u'Î',
+        'ocirc': u'ô',
+        'Ocirc': u'Ô',
+        'ucirc': u'û',
+        'Ucirc': u'Û',
+        'atilde': u'ã',
+        'Atilde': u'Ã',
+        'ntilde': u'ñ',
+        'Ntilde': u'Ñ',
+        'otilde': u'õ',
+        'Otilde': u'Õ',
+        'auml': u'ä',
+        'Auml': u'Ä',
+        'euml': u'ë',
+        'Euml': u'Ë',
+        'iuml': u'ï',
+        'Iuml': u'Ï',
+        'ouml': u'ö',
+        'Ouml': u'Ö',
+        'uuml': u'ü',
+        'Uuml': u'Ü',
+        'yuml': u'ÿ',
+        'Yuml': u'Ÿ',
+        'iexcl': u'¡',
+        'iquest': u'¿',
+        'ccedil': u'ç',
+        'Ccedil': u'Ç',
+        'oelig': u'œ',
+        'OElig': u'Œ',
+        'szlig': u'ß',
+        'oslash': u'ø',
+        'Oslash': u'Ø',
+        'aring': u'å',
+        'Aring': u'Å',
+        'aelig': u'æ',
+        'AElig': u'Æ',
+        'thorn': u'þ',
+        'THORN': u'Þ',
+        'eth': u'ð',
+        'ETH': u'Ð',
+        'mdash': u'—',
+        'ndash': u'–',
+        'sect': u'§',
+        'para': u'¶',
+        'uarr': u'↑',
+        'darr': u'↓',
+        'larr': u'←',
+        'rarr': u'→',
+        'dagger': u'†',
+        'Dagger': u'‡',
+        'permil': u'‰',
+        'prod': u'∏',
+        'infin': u'∞',
+        'radic': u'√',
+        'there4': u'∴',
+        'int': u'∫',
+        'asymp': u'≈',
+        'ne': u'≠',
+        'equiv': '≡',
+        'le': u'≤',
+        'ge': u'≥',
+        'loz': u'⋄',
+        'sum': u'∑',
+        'part': u'∂',
+        'prime': u'′',
+        'Prime': u'″',
+        'harr': u'↔',
+        'micro': u'µ',
+        'not': u'¬',
+        'plusmn': u'±',
+        'divide': u'÷',
+        'cent': u'¢',
+        'euro': u'€',
         }
 
     blockleveltags = [
-        u'h1',
-        u'h2',
-        u'h3',
-        u'h4',
-        u'h5',
-        u'h6',
-        u'pre',
-        u'p',
-        u'ul',
-        u'ol',
-        u'dl',
-        u'li',
-        u'dt',
-        u'dd',
-        u'div',
-        u'blockquote',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+        'pre',
+        'p',
+        'ul',
+        'ol',
+        'dl',
+        'li',
+        'dt',
+        'dd',
+        'div',
+        'blockquote',
         ]
 
     liststarttags = [
-        u'ul',
-        u'ol',
-        u'dl',
+        'ul',
+        'ol',
+        'dl',
         ]
 
     cancontainflow = [
-        u'div',
-        u'li',
-        u'dd',
-        u'blockquote',
+        'div',
+        'li',
+        'dd',
+        'blockquote',
     ]
 
     def __init__(self, textwidth = 70):
@@ -197,28 +197,28 @@ class HTML2Text(HTMLParser):
     def handle_starttag(self, tag, attrs):
         tag_name = tag.lower()
         if tag_name in self.blockleveltags:
-            # handle starting a new block - unless we're in a block element
+            # handle starting a new block - '\n'ess we're in a block element
             # that can contain other blocks, we'll assume that we want to close
             # the container
-            if len(self.opentags) > 1 and self.opentags[-1] == u'li':
+            if len(self.opentags) > 1 and self.opentags[-1] == 'li':
                 self.handle_curdata()
 
-            if tag_name == u'ol':
+            if tag_name == 'ol':
                 self.handle_curdata()
                 self.listcount.append(1)
                 self.listlevel = len(self.listcount) - 1
 
-            if tag_name == u'dl':
+            if tag_name == 'dl':
                 self.indentlevel = self.indentlevel + 4
 
             if tag_name in self.liststarttags:
                 smallist = self.opentags[-3:-1]
                 smallist.reverse()
                 for prev_listtag in smallist:
-                    if prev_listtag in [u'dl', u'ol']:
+                    if prev_listtag in ['dl', 'ol']:
                         self.indentlevel = self.indentlevel + 4
                         break
-                    elif prev_listtag == u'ul':
+                    elif prev_listtag == 'ul':
                         self.indentlevel = self.indentlevel + 3
                         break
 
@@ -236,25 +236,25 @@ class HTML2Text(HTMLParser):
             except:
                 pass
 
-            if tag_name == u'dd' and len(self.opentags) > 1 \
-                and self.opentags[-1] == u'dt':
+            if tag_name == 'dd' and len(self.opentags) > 1 \
+                and self.opentags[-1] == 'dt':
                 self.handle_curdata()
                 self.opentags.pop()
-            elif tag_name == u'dt' and len(self.opentags) > 1 \
-                and self.opentags[-1] == u'dd':
+            elif tag_name == 'dt' and len(self.opentags) > 1 \
+                and self.opentags[-1] == 'dd':
                 self.handle_curdata()
                 self.opentags.pop()
-            elif tag_name == u'a':
+            elif tag_name == 'a':
                 for attr in attrs:
-                    if attr[0].lower() == u'href':
+                    if attr[0].lower() == 'href':
                         self.urls.append(attr[1].decode('utf-8'))
-                self.curdata = self.curdata + u'`'
+                self.curdata = self.curdata + '`'
                 self.opentags.append(tag_name)
                 return
-            elif tag_name == u'img':
+            elif tag_name == 'img':
                 self.handle_image(attrs)
                 return
-            elif tag_name == u'br':
+            elif tag_name == 'br':
                 self.handle_br()
                 return
             else:
@@ -262,15 +262,15 @@ class HTML2Text(HTMLParser):
                 return
 
     def handle_startendtag(self, tag, attrs):
-        if tag.lower() == u'br':
+        if tag.lower() == 'br':
             self.handle_br()
-        elif tag.lower() == u'img':
+        elif tag.lower() == 'img':
             self.handle_image(attrs)
             return
 
     def handle_br(self):
             self.handle_curdata()
-            self.opentags.append(u'br')
+            self.opentags.append('br')
             self.handle_curdata()
             self.opentags.pop()
 
@@ -287,26 +287,26 @@ class HTML2Text(HTMLParser):
                 if self.images.has_key(alt):
                     if self.images[alt]["url"] == url:
                         self.curdata = self.curdata \
-                            + u'|%s|' %(alt,)
+                            + '|%s|' %(alt,)
                     else:
                         while self.images.has_key(alt):
                             alt = alt + "_"
                         self.images[alt] = {"url": url}
                         self.curdata = self.curdata \
-                            + u'|%s|' %(alt,)
+                            + '|%s|' %(alt,)
                 else:
                     self.images[alt] = {"url": url}
                     self.curdata = self.curdata \
-                        + u'|%s|' %(alt,)
+                        + '|%s|' %(alt,)
             else:
                 if self.images.has_key(url):
                     self.curdata = self.curdata \
-                        + u'|%s|' %(url,)
+                        + '|%s|' %(url,)
                 else:
                     self.images[url] = {}
                     self.images[url]["url"] =url
                     self.curdata = self.curdata \
-                        + u'|%s|' %(url,)
+                        + '|%s|' %(url,)
 
     def handle_curdata(self):
         if len(self.opentags) == 0:
@@ -317,7 +317,7 @@ class HTML2Text(HTMLParser):
         if len(self.curdata) == 0:
             return
 
-        if tag_thats_done == u'br':
+        if tag_thats_done == 'br':
             if len(self.text) == 0 or self.text[-1] != '\n':
                 self.text = self.text + '\n'
                 self.ignorenodata = True
@@ -332,20 +332,20 @@ class HTML2Text(HTMLParser):
                 newlinerequired = False
             self.ignorenodata = False
             if newlinerequired:
-                if tag_thats_done in [u'dt', u'dd', u'li'] \
+                if tag_thats_done in ['dt', 'dd', 'li'] \
                     and len(self.text) > 1 \
-                    and self.text[-1] != u'\n':
-                        self.text = self.text + u'\n'
+                    and self.text[-1] != '\n':
+                        self.text = self.text + '\n'
                 elif len(self.text) > 2 \
-                    and self.text[-1] != u'\n' \
-                    and self.text[-2] != u'\n':
-                    self.text = self.text + u'\n\n'
+                    and self.text[-1] != '\n' \
+                    and self.text[-2] != '\n':
+                    self.text = self.text + '\n\n'
 
         if tag_thats_done in ["h1", "h2", "h3", "h4", "h5", "h6"]:
             underline = u''
-            underlinechar = u'='
+            underlinechar = '='
             headingtext = " ".join(self.curdata.split())
-            seperator = u'\n' + u' '*self.indentlevel
+            seperator = '\n' + ' '*self.indentlevel
             headingtext = seperator.join( \
                 textwrap.wrap( \
                     headingtext, \
@@ -353,42 +353,42 @@ class HTML2Text(HTMLParser):
                     ) \
                 )
 
-            if tag_thats_done == u'h2':
-                underlinechar = u'-'
-            elif tag_thats_done != u'h1':
-                underlinechar = u'~'
+            if tag_thats_done == 'h2':
+                underlinechar = '-'
+            elif tag_thats_done != 'h1':
+                underlinechar = '~'
 
-            if u'\n' in headingtext:
-                underline = u' ' * self.indentlevel \
+            if '\n' in headingtext:
+                underline = ' ' * self.indentlevel \
                     + underlinechar * (self.textwidth - self.indentlevel)
             else:
-                underline = u' ' * self.indentlevel \
+                underline = ' ' * self.indentlevel \
                     + underlinechar * len(headingtext)
             self.text = self.text \
-                + headingtext + u'\n' \
+                + headingtext + '\n' \
                 + underline
-        elif tag_thats_done in [u'p', u'div']:
+        elif tag_thats_done in ['p', 'div']:
             paragraph = unicode( \
                 " ".join(self.curdata.strip().encode("utf-8").split()), \
                 "utf-8")
-            seperator = u'\n' + u' ' * self.indentlevel
+            seperator = '\n' + ' ' * self.indentlevel
             self.text = self.text \
-                + u' ' * self.indentlevel \
+                + ' ' * self.indentlevel \
                 + seperator.join( \
                     textwrap.wrap( \
                         paragraph, self.textwidth - self.indentlevel))
         elif tag_thats_done == "pre":
             self.text = self.text + unicode( \
                 self.curdata.encode("utf-8"), "utf-8")
-        elif tag_thats_done == u'blockquote':
+        elif tag_thats_done == 'blockquote':
             quote = unicode( \
                 " ".join(self.curdata.encode("utf-8").strip().split()), \
                 "utf-8")
-            seperator = u'\n' + u' ' * self.indentlevel + u'    '
-            if len(self.text) > 0 and self.text[-1] != u'\n':
-                self.text = self.text + u'\n'
+            seperator = '\n' + ' ' * self.indentlevel + '    '
+            if len(self.text) > 0 and self.text[-1] != '\n':
+                self.text = self.text + '\n'
             self.text = self.text \
-                + u'    ' \
+                + '    ' \
                 + seperator.join( \
                     textwrap.wrap( \
                         quote, \
@@ -398,8 +398,8 @@ class HTML2Text(HTMLParser):
             self.curdata = u''
         elif tag_thats_done == "li":
             item = unicode(self.curdata.encode("utf-8").strip(), "utf-8")
-            if len(self.text) > 0 and self.text[-1] != u'\n':
-                self.text = self.text + u'\n'
+            if len(self.text) > 0 and self.text[-1] != '\n':
+                self.text = self.text + '\n'
             # work out if we're in an ol rather than a ul
             latesttags = self.opentags[-4:]
             latesttags.reverse()
@@ -416,16 +416,16 @@ class HTML2Text(HTMLParser):
             if not isul:
                 listindent = 4
 
-            listmarker = u' * '
+            listmarker = ' * '
             if isul == False:
-                listmarker = u' %2d. ' %(self.listcount[-1])
+                listmarker = ' %2d. ' %(self.listcount[-1])
                 self.listcount[-1] = self.listcount[-1] + 1
 
-            seperator = u'\n' \
-                + u' ' * self.indentlevel \
-                + u' ' * listindent
+            seperator = '\n' \
+                + ' ' * self.indentlevel \
+                + ' ' * listindent
             self.text = self.text \
-                + u' ' * self.indentlevel \
+                + ' ' * self.indentlevel \
                 + listmarker \
                 + seperator.join( \
                     textwrap.wrap( \
@@ -434,29 +434,29 @@ class HTML2Text(HTMLParser):
                     ) \
                 )
             self.curdata = u''
-        elif tag_thats_done == u'dt':
+        elif tag_thats_done == 'dt':
             definition = unicode(" ".join( \
                     self.curdata.encode("utf-8").strip().split()), \
                 "utf-8")
-            if len(self.text) > 0 and self.text[-1] != u'\n':
-                self.text = self.text + u'\n\n'
-            elif len(self.text) > 1 and self.text[-2] != u'\n':
-                self.text = self.text + u'\n'
-            definition = u' ' * (self.indentlevel - 4) + definition + "::"
-            indentstring = u'\n' + u' ' * (self.indentlevel - 3)
+            if len(self.text) > 0 and self.text[-1] != '\n':
+                self.text = self.text + '\n\n'
+            elif len(self.text) > 1 and self.text[-2] != '\n':
+                self.text = self.text + '\n'
+            definition = ' ' * (self.indentlevel - 4) + definition + "::"
+            indentstring = '\n' + ' ' * (self.indentlevel - 3)
             self.text = self.text \
                 + indentstring.join(
                     textwrap.wrap(definition, \
                         self.textwidth - self.indentlevel - 4))
             self.curdata = u''
-        elif tag_thats_done == u'dd':
+        elif tag_thats_done == 'dd':
             definition = unicode(" ".join( \
                     self.curdata.encode("utf-8").strip().split()),
                 "utf-8")
             if len(definition) > 0:
-                if len(self.text) > 0 and self.text[-1] != u'\n':
-                    self.text = self.text + u'\n'
-                indentstring = u'\n' + u' ' * self.indentlevel
+                if len(self.text) > 0 and self.text[-1] != '\n':
+                    self.text = self.text + '\n'
+                indentstring = '\n' + ' ' * self.indentlevel
                 self.text = self.text \
                     + indentstring \
                     + indentstring.join( \
@@ -466,8 +466,8 @@ class HTML2Text(HTMLParser):
                             ) \
                         )
                 self.curdata = u''
-        elif tag_thats_done == u'a':
-            self.curdata = self.curdata + u'`__'
+        elif tag_thats_done == 'a':
+            self.curdata = self.curdata + '`__'
             pass
         elif tag_thats_done in self.liststarttags:
             pass
@@ -488,27 +488,27 @@ class HTML2Text(HTMLParser):
             return
         tag = tag.lower()
 
-        if tag in [u'br', u'img']:
+        if tag in ['br', 'img']:
             return
 
-        if tag == u'dl':
+        if tag == 'dl':
             self.indentlevel = self.indentlevel - 4
 
         if tag in self.liststarttags:
-            if tag in [u'ol', u'dl', u'ul', u'dd']:
+            if tag in ['ol', 'dl', 'ul', 'dd']:
                 self.handle_curdata()
                 # find if there was a previous list level
                 smalllist = self.opentags[:-1]
                 smalllist.reverse()
                 for prev_listtag in smalllist:
-                    if prev_listtag in [u'ol', u'dl']:
+                    if prev_listtag in ['ol', 'dl']:
                         self.indentlevel = self.indentlevel - 4
                         break
-                    elif prev_listtag == u'ul':
+                    elif prev_listtag == 'ul':
                         self.indentlevel = self.indentlevel - 3
                         break
 
-        if tag == u'ol':
+        if tag == 'ol':
             self.listcount = self.listcount[:-1]
 
         while tagindex < len(self.opentags) \
@@ -530,7 +530,7 @@ class HTML2Text(HTMLParser):
 
     def handle_data(self, data):
         if len(self.opentags) == 0:
-            self.opentags.append(u'p')
+            self.opentags.append('p')
         self.curdata = self.curdata + data.decode("utf-8")
 
     def handle_charref(self, name):
@@ -541,9 +541,9 @@ class HTML2Text(HTMLParser):
                 try:
                     entity = unichr(int('0%s' %(name,), 16))
                 except:
-                    entity = u'#%s' %(name,)
+                    entity = '#%s' %(name,)
             else:
-                entity = u'#%s' %(name,)
+                entity = '#%s' %(name,)
         self.curdata = self.curdata + unicode(entity.encode('utf-8'), \
             "utf-8")
 
@@ -559,20 +559,20 @@ class HTML2Text(HTMLParser):
 
     def gettext(self):
         self.handle_curdata()
-        if len(self.text) == 0 or self.text[-1] != u'\n':
-            self.text = self.text + u'\n'
+        if len(self.text) == 0 or self.text[-1] != '\n':
+            self.text = self.text + '\n'
         self.opentags = []
         if len(self.text) > 0:
-            while len(self.text) > 1 and self.text[-1] == u'\n':
+            while len(self.text) > 1 and self.text[-1] == '\n':
                 self.text = self.text[:-1]
-            self.text = self.text + u'\n'
+            self.text = self.text + '\n'
         if len(self.urls) > 0:
-            self.text = self.text + u'\n__ ' + u'\n__ '.join(self.urls) + u'\n'
+            self.text = self.text + '\n__ ' + '\n__ '.join(self.urls) + '\n'
             self.urls = []
         if len(self.images.keys()) > 0:
-            self.text = self.text + u'\n.. ' \
-                + u'\n.. '.join( \
+            self.text = self.text + '\n.. ' \
+                + '\n.. '.join( \
                     ["|%s| image:: %s" %(a, self.images[a]["url"]) \
-                for a in self.images.keys()]) + u'\n'
+                for a in self.images.keys()]) + '\n'
             self.images = {}
         return self.text
