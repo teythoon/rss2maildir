@@ -72,33 +72,42 @@ class Item(object):
 
     text_template = u'%(text_content)s\n\nItem URL: %(link)s'
     html_template = u'%(html_content)s\n<p>Item URL: <a href="%(link)s">%(link)s</a></p>'
-    def create_message(self, include_html_part = True):
+    def create_message(self, include_html_part = True, item_filters=None):
+
+        item = self
+        if item_filters:
+            for item_filter in item_filters:
+                item = item_filter(item)
+                if not item:
+                    return False
+
+                
         message = email.MIMEMultipart.MIMEMultipart('alternative')
 
-        message.set_unixfrom('%s <rss2maildir@localhost>' % self.feed.url)
-        message.add_header('From', '%s <rss2maildir@localhost>' % self.author)
-        message.add_header('To', '%s <rss2maildir@localhost>' % self.feed.url)
+        message.set_unixfrom('%s <rss2maildir@localhost>' % item.feed.url)
+        message.add_header('From', '%s <rss2maildir@localhost>' % item.author)
+        message.add_header('To', '%s <rss2maildir@localhost>' % item.feed.url)
 
         subj_gen = HTML2Text()
-        title = self.title.replace(u'<', u'&lt;').replace(u'>', u'&gt;')
+        title = item.title.replace(u'<', u'&lt;').replace(u'>', u'&gt;')
         subj_gen.feed(title.encode('utf-8'))
         message.add_header('Subject', subj_gen.gettext().strip())
 
-        message.add_header('Message-ID', self.message_id)
-        if self.previous_message_id:
-            message.add_header('References', self.previous_message_id)
+        message.add_header('Message-ID', item.message_id)
+        if item.previous_message_id:
+            message.add_header('References', item.previous_message_id)
 
-        message.add_header('Date', self.createddate)
+        message.add_header('Date', item.createddate)
         message.add_header('X-rss2maildir-rundate',
                        datetime.datetime.now().strftime('%a, %e %b %Y %T -0000'))
 
-        textpart = email.MIMEText.MIMEText((self.text_template % self).encode('utf-8'),
+        textpart = email.MIMEText.MIMEText((item.text_template % item).encode('utf-8'),
                                            'plain', 'utf-8')
         message.set_default_type('text/plain')
         message.attach(textpart)
 
         if include_html_part:
-            htmlpart = email.MIMEText.MIMEText((self.html_template % self).encode('utf-8'),
+            htmlpart = email.MIMEText.MIMEText((item.html_template % item).encode('utf-8'),
                                                'html', 'utf-8')
             message.attach(htmlpart)
 
