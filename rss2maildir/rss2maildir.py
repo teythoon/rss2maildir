@@ -19,6 +19,7 @@
 import os
 import urllib
 import logging
+import imp
 
 from .Database import Database
 from .Feed import Feed
@@ -50,10 +51,20 @@ def main():
             log.warning('Skipping feed %s' % url)
             continue
 
+        # get item filters
+        if 'item_filters' in settings:
+            item_filters = imp.load_source(
+                'item_filters',
+                settings['item_filters']).get_filters()
+
         # right - we've got the directories, we've got the url, we know the
         # url... lets play!
 
         feed = Feed(database, url)
         for item in feed.new_items():
-            message = item.create_message(include_html_part = settings.getboolean(feed.url, 'include_html_part'))
-            item.deliver(message, maildir)
+            message = item.create_message(
+                include_html_part=settings.getboolean(feed.url, 'include_html_part'),
+                item_filters=item_filters
+            )
+            if item:
+                item.deliver(message, maildir)
